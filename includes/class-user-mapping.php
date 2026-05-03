@@ -1,8 +1,10 @@
 <?php
 /**
  * UserMapping: WP user ↔ pm User 매핑.
- * - allowed_user_ids 자동 등록 훅 (user_register / set_user_role)
- * - ensure_for_current_user(): 페이지 진입 시 한 번 pm User upsert 후 user_meta에 캐싱
+ *
+ * v0.1.4부터는 자동 등록 훅을 두지 않는다. 사용자는 설정 → 사용자 매핑 탭에서
+ * 검색·추가로 명시적으로 등록해야 한다. 본 클래스는 페이지 진입 시 한 번
+ * pm User를 ensure하고 user_meta에 캐싱하는 책임만 가진다.
  *
  * @package IvySupportTicket
  */
@@ -13,45 +15,9 @@ defined( 'ABSPATH' ) || exit;
 
 class UserMapping {
 
-	/** Plugin::boot에서 호출되어 훅을 등록한다. */
+	/** Plugin::boot에서 호출되지만, 더 이상 등록할 훅이 없으므로 no-op. */
 	public static function register_hooks(): void {
-		add_action( 'user_register', array( __CLASS__, 'on_user_register' ), 10, 1 );
-		add_action( 'set_user_role', array( __CLASS__, 'on_set_user_role' ), 10, 3 );
-	}
-
-	/** 신규 가입 시 administrator/editor면 자동 등록 (옵션 활성 시). */
-	public static function on_user_register( int $user_id ): void {
-		$user = get_userdata( $user_id );
-		if ( ! $user ) {
-			return;
-		}
-		self::maybe_auto_enroll( $user );
-	}
-
-	/** 역할 변경 시 administrator/editor가 되면 자동 등록. */
-	public static function on_set_user_role( int $user_id, string $new_role, $old_roles ): void {
-		$user = get_userdata( $user_id );
-		if ( ! $user ) {
-			return;
-		}
-		self::maybe_auto_enroll( $user );
-	}
-
-	private static function maybe_auto_enroll( \WP_User $user ): void {
-		$s = Settings::get();
-		if ( empty( $s['auto_enroll_admin_editor'] ) ) {
-			return;
-		}
-		$roles = (array) $user->roles;
-		if ( ! array_intersect( $roles, array( 'administrator', 'editor' ) ) ) {
-			return;
-		}
-		$ids = array_map( 'absint', (array) $s['allowed_user_ids'] );
-		if ( in_array( $user->ID, $ids, true ) ) {
-			return;
-		}
-		$ids[] = $user->ID;
-		Settings::update( array( 'allowed_user_ids' => $ids ) );
+		// intentionally empty (v0.1.4)
 	}
 
 	/**

@@ -23,9 +23,8 @@ class Plugin {
 		add_filter( 'plugin_action_links_' . IVY_ST_PLUGIN_BASENAME, array( __CLASS__, 'add_settings_link' ) );
 	}
 
-	/** 활성화 훅: 첫 활성화 시 administrator·editor 자동 등록. */
+	/** 활성화 훅 — v0.1.4부터 자동 시드를 두지 않는다. 사용자는 설정에서 명시적으로 등록한다. */
 	public static function activate(): void {
-		Settings::seed_default_allowed_users();
 		flush_rewrite_rules( false );
 	}
 

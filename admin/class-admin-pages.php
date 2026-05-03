@@ -275,24 +275,13 @@ class AdminPages {
 			if ( isset( $_POST['api_key'] ) ) {
 				$patch['api_key'] = wp_unslash( $_POST['api_key'] );
 			}
-		} elseif ( $tab === 'users' ) {
-			$patch['allowed_user_ids']         = isset( $_POST['allowed_user_ids'] )
-				? array_map( 'absint', (array) wp_unslash( $_POST['allowed_user_ids'] ) )
-				: array();
-			$patch['auto_enroll_admin_editor'] = ! empty( $_POST['auto_enroll_admin_editor'] );
 		} elseif ( $tab === 'info' ) {
 			$patch['debug'] = ! empty( $_POST['debug'] );
 		}
+		// users 탭은 더 이상 폼 submit 항목이 없다 (검색·추가·해지는 AJAX 전용).
 
 		if ( ! empty( $patch ) ) {
 			Settings::update( $patch );
-		}
-
-		// "기본값으로 재설정" 버튼 — 사용자 매핑 탭 전용. allowed_user_ids만 갱신.
-		if ( isset( $_POST['ivy_st_reset_to_defaults'] ) ) {
-			Settings::update(
-				array( 'allowed_user_ids' => Settings::collect_admin_editor_user_ids() )
-			);
 		}
 
 		wp_safe_redirect(
@@ -558,7 +547,7 @@ class AdminPages {
 		wp_send_json_success( array( 'results' => $results ) );
 	}
 
-	/** 사용자 매핑 — 단건 추가. 정상 처리 후 갱신된 사용자 정보를 반환. */
+	/** 사용자 매핑 — 단건 추가. 갱신된 등록 사용자 목록 전체를 응답으로 반환. */
 	public static function ajax_user_add(): void {
 		check_ajax_referer( self::NONCE_AJAX );
 		if ( ! current_user_can( 'manage_options' ) ) {
@@ -583,12 +572,12 @@ class AdminPages {
 
 		wp_send_json_success(
 			array(
-				'user' => self::format_user_for_ui( $wp_user ),
+				'enrolled' => self::collect_enrolled_users(),
 			)
 		);
 	}
 
-	/** 사용자 매핑 — 단건 해지. */
+	/** 사용자 매핑 — 단건 해지. 갱신된 등록 사용자 목록 전체를 응답으로 반환. */
 	public static function ajax_user_remove(): void {
 		check_ajax_referer( self::NONCE_AJAX );
 		if ( ! current_user_can( 'manage_options' ) ) {
@@ -605,7 +594,26 @@ class AdminPages {
 		$ids      = array_values( array_filter( $ids, static fn( $id ) => $id !== $user_id ) );
 		Settings::update( array( 'allowed_user_ids' => $ids ) );
 
-		wp_send_json_success( array( 'user_id' => $user_id ) );
+		wp_send_json_success(
+			array(
+				'enrolled' => self::collect_enrolled_users(),
+			)
+		);
+	}
+
+	/** 현재 옵션의 allowed_user_ids에 대응하는 UI 표현 배열을 수집한다. */
+	public static function collect_enrolled_users(): array {
+		$s   = Settings::get();
+		$ids = array_map( 'absint', (array) $s['allowed_user_ids'] );
+		$out = array();
+		foreach ( $ids as $uid ) {
+			$wp_user = get_userdata( $uid );
+			if ( ! $wp_user ) {
+				continue;
+			}
+			$out[] = self::format_user_for_ui( $wp_user );
+		}
+		return $out;
 	}
 
 	/**

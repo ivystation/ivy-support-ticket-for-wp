@@ -2,6 +2,9 @@
 /**
  * Settings: wp_options에 저장되는 플러그인 설정의 단일 게이트웨이.
  *
+ * v0.1.4부터 자동 등록(auto_enroll_admin_editor)·기본값 시드 기능을 제거한다.
+ * 사용자는 설정 → 사용자 매핑 탭에서 명시적으로 검색·추가해야 한다.
+ *
  * @package IvySupportTicket
  */
 
@@ -14,11 +17,10 @@ class Settings {
 	/** 기본값 — 옵션이 비어 있을 때 폼에 표시될 값. */
 	public static function defaults(): array {
 		return array(
-			'api_base'                  => 'https://pm.ivynet.co.kr',
-			'api_key'                   => '',
-			'allowed_user_ids'          => array(),
-			'auto_enroll_admin_editor'  => true,
-			'debug'                     => false,
+			'api_base'         => 'https://pm.ivynet.co.kr',
+			'api_key'          => '',
+			'allowed_user_ids' => array(),
+			'debug'            => false,
 		);
 	}
 
@@ -51,9 +53,6 @@ class Settings {
 			$ids = array_map( 'absint', $ids );
 			$ids = array_values( array_unique( array_filter( $ids ) ) );
 			$next['allowed_user_ids'] = $ids;
-		}
-		if ( array_key_exists( 'auto_enroll_admin_editor', $patch ) ) {
-			$next['auto_enroll_admin_editor'] = (bool) $patch['auto_enroll_admin_editor'];
 		}
 		if ( array_key_exists( 'debug', $patch ) ) {
 			$next['debug'] = (bool) $patch['debug'];
@@ -91,35 +90,5 @@ class Settings {
 			return str_repeat( '*', $len );
 		}
 		return substr( $k, 0, 9 ) . str_repeat( '*', max( 4, $len - 13 ) ) . substr( $k, -4 );
-	}
-
-	/**
-	 * 첫 활성화 시 administrator·editor 역할의 모든 user를 allowed_user_ids에 자동 등록한다.
-	 * 이미 설정이 존재하는 경우(재활성화)에는 기존 목록을 유지한다.
-	 */
-	public static function seed_default_allowed_users(): void {
-		$existing = get_option( IVY_ST_OPT_SETTINGS, null );
-		if ( is_array( $existing ) && ! empty( $existing ) ) {
-			// 이미 설정된 사이트 — 기존 값 보존.
-			return;
-		}
-
-		$user_ids = self::collect_admin_editor_user_ids();
-		$initial  = self::defaults();
-		$initial['allowed_user_ids'] = $user_ids;
-		update_option( IVY_ST_OPT_SETTINGS, $initial, false );
-	}
-
-	/** administrator + editor role의 user.ID 배열. */
-	public static function collect_admin_editor_user_ids(): array {
-		$query = new \WP_User_Query(
-			array(
-				'role__in' => array( 'administrator', 'editor' ),
-				'fields'   => 'ID',
-				'number'   => -1,
-			)
-		);
-		$ids = array_map( 'absint', (array) $query->get_results() );
-		return array_values( array_unique( array_filter( $ids ) ) );
 	}
 }

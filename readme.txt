@@ -4,7 +4,7 @@ Tags: support, ticket, helpdesk, headless, ivynet
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 0.1.3
+Stable tag: 0.1.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -30,6 +30,12 @@ License URI: https://www.gnu.org/licenses/gpl-2.0.html
 4. 사용자 매핑 탭에서 티켓을 발행할 사용자 확인 (administrator/editor는 자동 등록됨)
 
 == Changelog ==
+
+= 0.1.4 =
+* breaking: 자동 등록(activate 시 administrator/editor 시드)·"기본값으로 재설정" 버튼·"신규 administrator/editor 자동 등록" 토글 모두 제거. 사용자는 설정 → 사용자 매핑 탭에서 검색·추가로만 등록한다.
+* refactor: ajax_user_add / ajax_user_remove 응답에 갱신된 enrolled 배열을 포함시켜 클라이언트가 서버 상태 그대로 재렌더링하도록 변경(로컬 state 누락 가능성 제거).
+* fix: 사용자 매핑 탭에 "설정 저장" 버튼 노출 안 됨(폼 submit 항목 없음).
+* debug: settings.js의 사용자 매핑 바인딩과 추가 클릭 시 console.log 출력으로 진단 용이.
 
 = 0.1.3 =
 * fix(설정): 사용자 매핑 인터랙션이 별도 users.js로 분리되어 있던 구조에서 IVY_ST 글로벌 의존성 충돌이 발생하던 문제 해결.

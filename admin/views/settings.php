@@ -99,7 +99,7 @@ foreach ( $enrolled_ids as $uid ) {
 
 		<?php elseif ( $active_tab === 'users' ) : ?>
 			<p class="description ivy-st-section-help">
-				<?php esc_html_e( '티켓을 발행할 수 있는 워드프레스 사용자만 명시적으로 등록·해지하세요. 활성화 시 administrator·editor가 자동으로 등록되어 있습니다.', 'ivy-support-ticket' ); ?>
+				<?php esc_html_e( '티켓을 발행할 수 있는 워드프레스 사용자만 검색해 명시적으로 등록·해지하세요.', 'ivy-support-ticket' ); ?>
 			</p>
 
 			<h2 class="ivy-st-mapping-h">
@@ -146,30 +146,6 @@ foreach ( $enrolled_ids as $uid ) {
 			</div>
 
 			<ul id="ivy-st-search-results" class="ivy-st-mapping-list ivy-st-search-results"></ul>
-
-			<h2 class="ivy-st-mapping-h"><?php esc_html_e( '옵션', 'ivy-support-ticket' ); ?></h2>
-			<table class="form-table" role="presentation">
-				<tr>
-					<th scope="row"><?php esc_html_e( '자동 등록', 'ivy-support-ticket' ); ?></th>
-					<td>
-						<label>
-							<input type="checkbox" name="auto_enroll_admin_editor" value="1"
-							       <?php checked( ! empty( $settings['auto_enroll_admin_editor'] ) ); ?> />
-							<?php esc_html_e( '신규 또는 권한이 administrator/editor로 변경된 사용자를 자동으로 등록', 'ivy-support-ticket' ); ?>
-						</label>
-					</td>
-				</tr>
-				<tr>
-					<th scope="row"><?php esc_html_e( '기본값으로 재설정', 'ivy-support-ticket' ); ?></th>
-					<td>
-						<button type="submit" name="ivy_st_reset_to_defaults" value="1"
-						        class="button"
-						        onclick="return confirm('<?php echo esc_js( __( '등록된 사용자 목록을 administrator + editor 전체로 재설정하시겠습니까?', 'ivy-support-ticket' ) ); ?>');">
-							<?php esc_html_e( '관리자/편집자 전체로 초기화', 'ivy-support-ticket' ); ?>
-						</button>
-					</td>
-				</tr>
-			</table>
 
 		<?php elseif ( $active_tab === 'info' ) : ?>
 			<table class="form-table" role="presentation">
@@ -229,6 +205,11 @@ foreach ( $enrolled_ids as $uid ) {
 			</table>
 		<?php endif; ?>
 
-		<?php submit_button( __( '설정 저장', 'ivy-support-ticket' ) ); ?>
+		<?php
+		// users 탭은 폼 submit 항목이 없다(검색·추가·해지는 모두 AJAX). 저장 버튼 숨김.
+		if ( $active_tab !== 'users' ) {
+			submit_button( __( '설정 저장', 'ivy-support-ticket' ) );
+		}
+		?>
 	</form>
 </div>
