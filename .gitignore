@@ -1,0 +1,27 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# Editors
+.idea/
+.vscode/
+*.sublime-*
+
+# Logs
+*.log
+
+# Build artefacts (추후 단계에서 추가될 zip 패키지 제외)
+dist/
+*.zip
+!.github/**/*.zip
+
+# PHP
+vendor/composer/
+composer.lock
+
+# Node (현재 미사용, 추후를 위한 예방)
+node_modules/
+
+# WP 임시 파일
+*.bak
+*.swp
