@@ -4,7 +4,7 @@ Tags: support, ticket, helpdesk, headless, ivynet
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 0.1.4
+Stable tag: 0.2.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -32,7 +32,7 @@ License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
 == Changelog ==
 
-= 0.2.0 (dev) =
+= 0.2.0 =
 * feat(sso): ticket.ivynet.co.kr SSO 자동 로그인 기능 추가. 메뉴 클릭 시 HS256 JWT를 생성하여 ticket.ivynet.co.kr을 새 탭으로 열고 pm.ivynet.co.kr에서 세션을 발급받아 자동 로그인한다.
 * feat(설정): SSO 탭 신설 — 티켓 포털 URL + SSO 시크릿 키 + 활성화 상태 표시.
 * SSO 미설정 시 기존 내장 UI(티켓 목록·작성·상세) 그대로 동작 (하위 호환).
