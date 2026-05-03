@@ -1,0 +1,41 @@
+/* Ivy Support Ticket for WordPress — admin 화면 공통 스타일 */
+
+.ivy-st-settings .nav-tab-wrapper {
+	margin-bottom: 16px;
+}
+
+.ivy-st-settings .form-table th {
+	width: 200px;
+}
+
+.ivy-st-section-help {
+	max-width: 720px;
+	margin: 16px 0;
+	color: #50575e;
+}
+
+.ivy-st-user-select {
+	font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+	font-size: 12px;
+}
+
+.ivy-st-test-result {
+	margin-left: 12px;
+	font-weight: 600;
+}
+
+.ivy-st-test-result.is-success {
+	color: #00a32a;
+}
+
+.ivy-st-test-result.is-error {
+	color: #d63638;
+}
+
+.ivy-st-test-result.is-pending {
+	color: #50575e;
+}
+
+.ivy-st-page .notice {
+	max-width: 760px;
+}
