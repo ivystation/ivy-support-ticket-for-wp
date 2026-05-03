@@ -17,6 +17,7 @@ class Plugin {
 
 		AdminPages::register_hooks();
 		UserMapping::register_hooks();
+		Updater::init();
 
 		// 플러그인 목록 화면에서 "설정" 빠른 링크 노출.
 		add_filter( 'plugin_action_links_' . IVY_ST_PLUGIN_BASENAME, array( __CLASS__, 'add_settings_link' ) );

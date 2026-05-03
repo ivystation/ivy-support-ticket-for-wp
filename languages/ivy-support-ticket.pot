@@ -1,0 +1,323 @@
+# Copyright (C) 2026 ivynet
+# This file is distributed under the GPLv2 or later.
+msgid ""
+msgstr ""
+"Project-Id-Version: Ivy Support Ticket for WordPress 0.1.0\n"
+"Report-Msgid-Bugs-To: https://github.com/ivystation/ivy-support-ticket-for-wp/issues\n"
+"POT-Creation-Date: 2026-05-03 00:00+0900\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: ivy-support-ticket\n"
+"X-Domain: ivy-support-ticket\n"
+
+# 메뉴 / 어드민 바
+msgid "Support Ticket"
+msgstr ""
+
+msgid "티켓 목록"
+msgstr ""
+
+msgid "새 티켓 작성"
+msgstr ""
+
+msgid "티켓 상세"
+msgstr ""
+
+msgid "설정"
+msgstr ""
+
+msgid "티켓 관리"
+msgstr ""
+
+msgid "← 목록으로"
+msgstr ""
+
+# 권한 / 매핑
+msgid "이 페이지에 접근할 권한이 없습니다."
+msgstr ""
+
+msgid "권한이 없습니다."
+msgstr ""
+
+msgid "로그인이 필요합니다."
+msgstr ""
+
+msgid "티켓 발행 권한이 없는 사용자입니다."
+msgstr ""
+
+msgid "사용자 매핑에 실패했습니다."
+msgstr ""
+
+msgid "사용자 매핑 실패"
+msgstr ""
+
+msgid "관리자에게 문의하거나, 설정 페이지에서 API 연결과 사용자 매핑을 확인해 주세요."
+msgstr ""
+
+# 설정 페이지
+msgid "Support Ticket 설정"
+msgstr ""
+
+msgid "설정이 저장되었습니다."
+msgstr ""
+
+msgid "API 연결"
+msgstr ""
+
+msgid "사용자 매핑"
+msgstr ""
+
+msgid "정보"
+msgstr ""
+
+msgid "API Base URL"
+msgstr ""
+
+msgid "기본값: https://pm.ivynet.co.kr"
+msgstr ""
+
+msgid "API Key"
+msgstr ""
+
+msgid "저장된 키가 있습니다. 변경하려면 새 키를 입력하세요. 비워 두면 기존 키 유지."
+msgstr ""
+
+msgid "pm.ivynet.co.kr 어드민에서 발급된 ivk_live_… 형식의 키를 붙여 넣으세요."
+msgstr ""
+
+msgid "연결 테스트"
+msgstr ""
+
+msgid "저장된 API Key로 /api/external/wp/health를 호출합니다. 키 변경 후에는 먼저 저장 → 테스트 순서로 진행하세요."
+msgstr ""
+
+msgid "아래 목록에서 티켓을 발행할 수 있는 워드프레스 사용자를 선택하세요. 활성화 시 administrator·editor 역할의 모든 사용자가 자동 등록됩니다."
+msgstr ""
+
+msgid "허용된 사용자"
+msgstr ""
+
+msgid "Ctrl(또는 Cmd) 클릭으로 다중 선택. ✓ 표시는 pm 시스템에 매핑이 완료된 사용자입니다."
+msgstr ""
+
+msgid "자동 등록"
+msgstr ""
+
+msgid "신규 또는 권한이 administrator/editor로 변경된 사용자를 자동으로 허용 목록에 추가"
+msgstr ""
+
+msgid "기본값으로 재설정"
+msgstr ""
+
+msgid "허용 사용자 목록을 administrator + editor 전체로 재설정하시겠습니까?"
+msgstr ""
+
+msgid "관리자/편집자 전체로 초기화"
+msgstr ""
+
+msgid "플러그인 버전"
+msgstr ""
+
+msgid "저장소"
+msgstr ""
+
+msgid "디버그 로그"
+msgstr ""
+
+msgid "wp-content/uploads/ivy-support-ticket-debug.log에 API 호출 결과 기록 (API Key 마스킹)"
+msgstr ""
+
+msgid "첨부 업로드 (R2 CORS)"
+msgstr ""
+
+msgid "브라우저가 Cloudflare R2에 직접 PUT으로 첨부를 업로드하므로, R2 버킷의 CORS 정책에 이 사이트의 도메인을 등록해야 합니다."
+msgstr ""
+
+msgid "권장 CORS 규칙 보기"
+msgstr ""
+
+msgid "여러 사이트에 플러그인을 설치한 경우, 각 사이트의 origin을 AllowedOrigins 배열에 모두 추가하거나 와일드카드를 사용하세요."
+msgstr ""
+
+msgid "설정 저장"
+msgstr ""
+
+# 목록 페이지
+msgid "번호"
+msgstr ""
+
+msgid "제목"
+msgstr ""
+
+msgid "카테고리"
+msgstr ""
+
+msgid "우선순위"
+msgstr ""
+
+msgid "상태"
+msgstr ""
+
+msgid "댓글"
+msgstr ""
+
+msgid "작성일"
+msgstr ""
+
+msgid "표시할 티켓이 없습니다."
+msgstr ""
+
+msgid "전체"
+msgstr ""
+
+msgid "접수"
+msgstr ""
+
+msgid "진행중"
+msgstr ""
+
+msgid "완료"
+msgstr ""
+
+# 작성 폼
+msgid "2~200자"
+msgstr ""
+
+msgid "내용"
+msgstr ""
+
+msgid "HTML 형식으로 저장됩니다. 이미지·첨부파일 업로드는 곧 지원됩니다."
+msgstr ""
+
+msgid "추가 정보 (선택)"
+msgstr ""
+
+msgid "예산"
+msgstr ""
+
+msgid "예: 5,000,000원"
+msgstr ""
+
+msgid "완료 희망일"
+msgstr ""
+
+msgid "참고 URL"
+msgstr ""
+
+msgid "티켓 제출"
+msgstr ""
+
+msgid "취소"
+msgstr ""
+
+msgid "첨부파일"
+msgstr ""
+
+msgid "최대 5개, 각 10MB 이하. 이미지·PDF·문서·압축파일."
+msgstr ""
+
+# 상세 페이지
+msgid "티켓 ID가 지정되지 않았습니다."
+msgstr ""
+
+msgid "예산 / 마감"
+msgstr ""
+
+msgid "문의 내용"
+msgstr ""
+
+msgid "STAFF"
+msgstr ""
+
+msgid "댓글 작성"
+msgstr ""
+
+msgid "댓글을 입력하세요."
+msgstr ""
+
+msgid "첨부 — 최대 5개 / 각 10MB 이하"
+msgstr ""
+
+msgid "아직 댓글이 없습니다."
+msgstr ""
+
+# AJAX / 검증 메시지
+msgid "API Base URL이 설정되지 않았습니다."
+msgstr ""
+
+msgid "API Key가 설정되지 않았습니다."
+msgstr ""
+
+msgid "서버 응답을 해석할 수 없습니다."
+msgstr ""
+
+msgid "알 수 없는 오류가 발생했습니다."
+msgstr ""
+
+msgid "제목은 2~200자여야 합니다."
+msgstr ""
+
+msgid "내용을 입력하세요."
+msgstr ""
+
+msgid "티켓 ID가 누락되었습니다."
+msgstr ""
+
+msgid "댓글 내용을 입력하세요."
+msgstr ""
+
+msgid "잘못된 파일 정보입니다."
+msgstr ""
+
+msgid "파일 크기는 10MB 이하여야 합니다."
+msgstr ""
+
+msgid "r2Key가 필요합니다."
+msgstr ""
+
+# JS i18n
+msgid "연결 확인 중..."
+msgstr ""
+
+msgid "연결 성공"
+msgstr ""
+
+msgid "연결 실패"
+msgstr ""
+
+msgid "제출 중..."
+msgstr ""
+
+msgid "티켓이 발행되었습니다."
+msgstr ""
+
+msgid "댓글 등록 중..."
+msgstr ""
+
+msgid "댓글이 등록되었습니다."
+msgstr ""
+
+msgid "요청에 실패했습니다."
+msgstr ""
+
+msgid "업로드 중..."
+msgstr ""
+
+msgid "완료"
+msgstr ""
+
+msgid "파일이 10MB를 초과합니다."
+msgstr ""
+
+msgid "허용되지 않는 파일 형식입니다."
+msgstr ""
+
+msgid "첨부는 최대 ${n}개입니다."
+msgstr ""
+
+msgid "R2 업로드 실패. 사이트 도메인의 R2 CORS 등록을 확인하세요."
+msgstr ""
+
+msgid "준비 중..."
+msgstr ""

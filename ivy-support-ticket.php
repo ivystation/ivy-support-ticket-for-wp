@@ -34,6 +34,7 @@ require_once IVY_ST_PLUGIN_DIR . 'includes/class-settings.php';
 require_once IVY_ST_PLUGIN_DIR . 'includes/class-labels.php';
 require_once IVY_ST_PLUGIN_DIR . 'includes/class-api-client.php';
 require_once IVY_ST_PLUGIN_DIR . 'includes/class-user-mapping.php';
+require_once IVY_ST_PLUGIN_DIR . 'includes/class-updater.php';
 require_once IVY_ST_PLUGIN_DIR . 'admin/class-ticket-list-table.php';
 require_once IVY_ST_PLUGIN_DIR . 'admin/class-admin-pages.php';
 require_once IVY_ST_PLUGIN_DIR . 'includes/class-plugin.php';
