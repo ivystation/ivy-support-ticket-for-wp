@@ -4,7 +4,7 @@ Tags: support, ticket, helpdesk, headless, ivynet
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 0.1.2
+Stable tag: 0.1.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -30,6 +30,10 @@ License URI: https://www.gnu.org/licenses/gpl-2.0.html
 4. 사용자 매핑 탭에서 티켓을 발행할 사용자 확인 (administrator/editor는 자동 등록됨)
 
 == Changelog ==
+
+= 0.1.3 =
+* fix(설정): 사용자 매핑 인터랙션이 별도 users.js로 분리되어 있던 구조에서 IVY_ST 글로벌 의존성 충돌이 발생하던 문제 해결.
+* refactor: settings.js 단일 파일로 통합 — 연결 테스트 + 사용자 매핑(검색·추가·해지) 모두 한 핸들에서 처리. IVY_ST 미정의 시 콘솔 경고로 진단 가능.
 
 = 0.1.2 =
 * feat(설정): 사용자 매핑 탭 UI 개편 — 전체 사용자 목록 대신 등록된 사용자만 카드 형태로 표시.

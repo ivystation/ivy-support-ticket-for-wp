@@ -1,12 +1,32 @@
 /* global IVY_ST, jQuery */
+/**
+ * 설정 페이지(전체 탭) 공용 인터랙션. v0.1.3부터 단일 파일로 통합되어
+ * IVY_ST 글로벌 로딩 순서·의존성 충돌 가능성을 제거한다.
+ *
+ *  - API 연결 탭: "연결 테스트" 버튼
+ *  - 사용자 매핑 탭: 검색 / 추가 / 해지 (admin-ajax 기반)
+ */
 (function ($) {
 	'use strict';
 
-	// 연결 테스트 버튼: 저장된 API Key로 health 엔드포인트를 호출하고 결과를 옆에 표시.
+	if (typeof IVY_ST === 'undefined') {
+		// localize_script가 같은 핸들에 prepended되었어야 한다 — 진단을 돕는 콘솔 메시지.
+		// eslint-disable-next-line no-console
+		console.error('[ivy-support-ticket] IVY_ST 글로벌이 정의되지 않았습니다. enqueue 순서 또는 캐시 문제일 가능성.');
+		return;
+	}
+
 	$(function () {
+		bindConnectionTest();
+		bindUserMapping();
+	});
+
+	// ────────────────────────────────────────────────
+	// 연결 테스트 (API 연결 탭)
+	// ────────────────────────────────────────────────
+	function bindConnectionTest() {
 		var $btn    = $('#ivy-st-test-connection');
 		var $result = $('#ivy-st-test-result');
-
 		if (!$btn.length) {
 			return;
 		}
@@ -43,5 +63,188 @@
 						.text(IVY_ST.i18n.failed + ' (HTTP ' + (xhr && xhr.status ? xhr.status : '0') + ')');
 				});
 		});
-	});
+	}
+
+	// ────────────────────────────────────────────────
+	// 사용자 매핑 (사용자 매핑 탭)
+	// ────────────────────────────────────────────────
+	function bindUserMapping() {
+		var $list   = $('#ivy-st-allowed-list');
+		var $count  = $('#ivy-st-allowed-count');
+		var $input  = $('#ivy-st-user-search');
+		var $btn    = $('#ivy-st-search-btn');
+		var $status = $('#ivy-st-search-status');
+		var $result = $('#ivy-st-search-results');
+
+		if (!$list.length) {
+			return;
+		}
+
+		// ---- 등록된 사용자 해지 ----
+		$list.on('click', '.ivy-st-remove-btn', function () {
+			var $li    = $(this).closest('.ivy-st-mapping-item');
+			var userId = parseInt($li.attr('data-user-id'), 10);
+			var name   = $li.find('.ivy-st-mapping-name').text();
+			if (!userId) return;
+			if (!window.confirm(name + ' — 등록을 해지할까요?')) return;
+
+			var $remove = $(this);
+			$remove.prop('disabled', true).text('처리 중...');
+
+			$.post(IVY_ST.ajaxUrl, {
+				action:   'ivy_st_user_remove',
+				_wpnonce: IVY_ST.nonce,
+				user_id:  userId
+			})
+				.done(function (resp) {
+					if (resp && resp.success) {
+						$li.fadeOut(180, function () {
+							$li.remove();
+							refreshCount();
+							ensureEmptyState();
+							var $row = $result.find('.ivy-st-mapping-item').filter(function () {
+								return parseInt($(this).attr('data-user-id'), 10) === userId;
+							});
+							if ($row.length) {
+								$row.find('.ivy-st-action-btn').replaceWith(addBtnHtml());
+								$row.find('.ivy-st-mapping-pm').remove();
+							}
+						});
+					} else {
+						alert((resp && resp.data && resp.data.message) || '해지에 실패했습니다.');
+						$remove.prop('disabled', false).text('해지');
+					}
+				})
+				.fail(function () {
+					alert('해지 요청 실패');
+					$remove.prop('disabled', false).text('해지');
+				});
+		});
+
+		// ---- 검색 ----
+		function triggerSearch() {
+			var q = $.trim($input.val());
+			if (q.length < 2) {
+				$status.removeClass('is-success is-error').text('2자 이상 입력해 주세요.');
+				return;
+			}
+			$status.removeClass('is-success is-error').text('검색 중...');
+			$result.empty();
+
+			$.post(IVY_ST.ajaxUrl, {
+				action:   'ivy_st_user_search',
+				_wpnonce: IVY_ST.nonce,
+				q:        q
+			})
+				.done(function (resp) {
+					if (resp && resp.success) {
+						var users = (resp.data && resp.data.results) || [];
+						$status.text(users.length + '명 발견');
+						renderSearchResults(users);
+					} else {
+						var msg = (resp && resp.data && resp.data.message) || '검색에 실패했습니다.';
+						$status.addClass('is-error').text(msg);
+					}
+				})
+				.fail(function () {
+					$status.addClass('is-error').text('검색 요청 실패');
+				});
+		}
+
+		$btn.on('click', triggerSearch);
+		$input.on('keydown', function (e) {
+			if (e.key === 'Enter') {
+				e.preventDefault();
+				triggerSearch();
+			}
+		});
+
+		// ---- 검색 결과에서 추가 ----
+		// 이벤트 위임으로 동적으로 렌더된 카드의 버튼도 처리.
+		$result.on('click', '.ivy-st-add-btn', function () {
+			var $row    = $(this).closest('.ivy-st-mapping-item');
+			var userId  = parseInt($row.attr('data-user-id'), 10);
+			if (!userId) return;
+
+			var $addBtn = $(this);
+			$addBtn.prop('disabled', true).text('추가 중...');
+
+			$.post(IVY_ST.ajaxUrl, {
+				action:   'ivy_st_user_add',
+				_wpnonce: IVY_ST.nonce,
+				user_id:  userId
+			})
+				.done(function (resp) {
+					if (resp && resp.success && resp.data && resp.data.user) {
+						appendEnrolled(resp.data.user);
+						refreshCount();
+						ensureEmptyState();
+						$addBtn.replaceWith('<span class="ivy-st-already">이미 등록됨</span>');
+					} else {
+						var msg = (resp && resp.data && resp.data.message) || '추가에 실패했습니다.';
+						alert(msg);
+						$addBtn.prop('disabled', false).text('추가');
+					}
+				})
+				.fail(function () {
+					alert('추가 요청 실패');
+					$addBtn.prop('disabled', false).text('추가');
+				});
+		});
+
+		// ---- 렌더 헬퍼 ----
+		function renderSearchResults(users) {
+			$result.empty();
+			if (!users.length) {
+				$result.html('<li class="ivy-st-mapping-empty">검색 결과가 없습니다.</li>');
+				return;
+			}
+			users.forEach(function (u) {
+				$result.append(buildRow(u, /* searchCard */ true));
+			});
+		}
+
+		function buildRow(u, searchCard) {
+			var $li = $('<li class="ivy-st-mapping-item"></li>').attr('data-user-id', String(u.id));
+			var $info = $('<div class="ivy-st-mapping-info"></div>')
+				.append($('<strong class="ivy-st-mapping-name"></strong>').text(u.display_name))
+				.append($('<span class="ivy-st-mapping-email"></span>').text(u.email))
+				.append($('<span class="ivy-st-mapping-roles"></span>').text((u.roles || []).join(', ')));
+			if (u.pm_user_id) {
+				$info.append('<span class="ivy-st-mapping-pm" title="pm 시스템에 매핑됨">✓ pm</span>');
+			}
+			$li.append($info);
+
+			if (searchCard) {
+				if (u.enrolled) {
+					$li.append('<span class="ivy-st-already">이미 등록됨</span>');
+				} else {
+					$li.append(addBtnHtml());
+				}
+			} else {
+				$li.append('<button type="button" class="button button-link-delete ivy-st-remove-btn">해지</button>');
+			}
+			return $li;
+		}
+
+		function addBtnHtml() {
+			return '<button type="button" class="button button-primary ivy-st-action-btn ivy-st-add-btn">추가</button>';
+		}
+
+		function appendEnrolled(u) {
+			$list.find('.ivy-st-mapping-empty').remove();
+			$list.append(buildRow(u, /* searchCard */ false));
+		}
+
+		function refreshCount() {
+			var n = $list.find('.ivy-st-mapping-item').length;
+			$count.text('(' + n + ')');
+		}
+
+		function ensureEmptyState() {
+			if ($list.find('.ivy-st-mapping-item').length === 0 && $list.find('.ivy-st-mapping-empty').length === 0) {
+				$list.append('<li class="ivy-st-mapping-empty">아직 등록된 사용자가 없습니다. 위 검색으로 사용자를 추가하세요.</li>');
+			}
+		}
+	}
 })(jQuery);

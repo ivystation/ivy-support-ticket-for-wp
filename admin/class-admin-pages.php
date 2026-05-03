@@ -178,16 +178,10 @@ class AdminPages {
 		);
 
 		if ( $page === self::SLUG_SETTING ) {
+			// 단일 settings.js로 통합 (v0.1.3) — 연결 테스트 + 사용자 매핑(검색·추가·해지)
 			wp_enqueue_script(
 				'ivy-st-settings',
 				IVY_ST_PLUGIN_URL . 'assets/js/settings.js',
-				array( 'jquery' ),
-				IVY_ST_VERSION,
-				true
-			);
-			wp_enqueue_script(
-				'ivy-st-users',
-				IVY_ST_PLUGIN_URL . 'assets/js/users.js',
 				array( 'jquery' ),
 				IVY_ST_VERSION,
 				true
