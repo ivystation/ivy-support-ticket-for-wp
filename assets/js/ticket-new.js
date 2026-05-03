@@ -1,4 +1,4 @@
-/* global IVY_ST, jQuery, tinyMCE */
+/* global IVY_ST, IvyST, jQuery, tinyMCE */
 (function ($) {
 	'use strict';
 
@@ -9,6 +9,16 @@
 
 		if (!$form.length) {
 			return;
+		}
+
+		// 첨부 업로더 — 폼 직렬화 시 hidden #ivy-st-attach-data 가 attachments JSON으로 함께 전송된다.
+		if (window.IvyST && window.IvyST.AttachUploader) {
+			window.IvyST.AttachUploader.bind({
+				fileInput: '#ivy-st-attach-input',
+				listEl:    '#ivy-st-attach-list',
+				dataInput: '#ivy-st-attach-data',
+				maxItems:  5
+			});
 		}
 
 		$form.on('submit', function (e) {

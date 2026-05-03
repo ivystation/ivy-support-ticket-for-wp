@@ -91,6 +91,17 @@ $mapping = \IvyST\UserMapping::ensure_for_current_user( $api );
 			</tr>
 		</table>
 
+		<h2 class="ivy-st-section-h"><?php esc_html_e( '첨부파일', 'ivy-support-ticket' ); ?></h2>
+		<div class="ivy-st-attach-area">
+			<input type="file" id="ivy-st-attach-input" multiple
+			       accept="image/jpeg,image/png,image/gif,image/webp,image/svg+xml,application/pdf,text/plain,text/csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/zip,application/x-zip-compressed" />
+			<p class="description">
+				<?php esc_html_e( '최대 5개, 각 10MB 이하. 이미지·PDF·문서·압축파일.', 'ivy-support-ticket' ); ?>
+			</p>
+			<ul id="ivy-st-attach-list" class="ivy-st-attach-list" aria-live="polite"></ul>
+			<input type="hidden" name="attachments" id="ivy-st-attach-data" value="[]" />
+		</div>
+
 		<h2 class="ivy-st-section-h"><?php esc_html_e( '추가 정보 (선택)', 'ivy-support-ticket' ); ?></h2>
 		<table class="form-table" role="presentation">
 			<tr>

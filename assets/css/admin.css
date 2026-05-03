@@ -233,3 +233,78 @@
 	margin: 16px 0;
 }
 .ivy-st-form .required { color: #d63638; }
+
+/* 첨부 업로드 영역 */
+.ivy-st-attach-area {
+	max-width: 960px;
+	background: #fff;
+	border: 1px dashed #c3c4c7;
+	border-radius: 4px;
+	padding: 12px 16px;
+	margin: 8px 0 16px;
+}
+.ivy-st-attach-area-inline {
+	margin: 8px 0 0;
+	border-style: solid;
+	border-color: #f0f0f1;
+	background: #fafafa;
+}
+.ivy-st-attach-area .description {
+	display: inline-block;
+	margin-left: 8px;
+	color: #6b7280;
+	font-size: 12px;
+}
+.ivy-st-attach-list {
+	list-style: none;
+	margin: 8px 0 0;
+	padding: 0;
+}
+.ivy-st-attach-item {
+	display: flex;
+	gap: 8px;
+	align-items: center;
+	padding: 6px 8px;
+	border-radius: 3px;
+	background: #f6f7f7;
+	font-size: 13px;
+	margin-bottom: 4px;
+}
+.ivy-st-attach-item.is-pending  { background: #fef3c7; }
+.ivy-st-attach-item.is-success  { background: #ecfdf5; }
+.ivy-st-attach-item.is-error    { background: #fee2e2; }
+.ivy-st-attach-name { font-weight: 600; }
+.ivy-st-attach-size { color: #6b7280; font-size: 12px; }
+.ivy-st-attach-state {
+	margin-left: auto;
+	font-size: 12px;
+	font-weight: 600;
+	color: #50575e;
+}
+.ivy-st-attach-item.is-pending .ivy-st-attach-state { color: #92400e; }
+.ivy-st-attach-item.is-success .ivy-st-attach-state { color: #065f46; }
+.ivy-st-attach-item.is-error   .ivy-st-attach-state { color: #991b1b; }
+
+/* 첨부 다운로드 링크 */
+.ivy-st-att-download {
+	text-decoration: none;
+	font-weight: 600;
+}
+.ivy-st-att-download:hover { text-decoration: underline; }
+
+/* 설정 정보 탭 — R2 CORS 도움말 */
+.ivy-st-cors-help summary {
+	cursor: pointer;
+	color: #2271b1;
+	font-weight: 600;
+	margin: 6px 0;
+}
+.ivy-st-cors-pre {
+	background: #1d2327;
+	color: #f6f7f7;
+	padding: 12px 16px;
+	border-radius: 4px;
+	font-size: 12px;
+	overflow-x: auto;
+	max-width: 760px;
+}

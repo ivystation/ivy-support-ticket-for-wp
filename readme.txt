@@ -32,5 +32,7 @@ License URI: https://www.gnu.org/licenses/gpl-2.0.html
 == Changelog ==
 
 = 0.1.0 =
-* 첫 골격 — 메뉴, 설정 페이지, ApiClient, 사용자 매핑 자동 등록.
-* 티켓 CRUD UI는 다음 버전에서 제공.
+* 플러그인 골격, 메뉴, 설정 페이지, ApiClient, 사용자 매핑 자동 등록 (Phase 2)
+* 티켓 작성·목록·상세·댓글 UI (Phase 3)
+* 첨부파일 업로드(R2 직접 PUT) / 다운로드(Presigned GET) — 새 티켓·댓글 양쪽 지원 (Phase 4)
+* GitHub Releases 자동 업데이트는 다음 버전에서 활성화 (Phase 5)

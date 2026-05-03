@@ -25,6 +25,8 @@ class AdminPages {
 		add_action( 'wp_ajax_ivy_st_test_connection', array( __CLASS__, 'ajax_test_connection' ) );
 		add_action( 'wp_ajax_ivy_st_create_ticket', array( __CLASS__, 'ajax_create_ticket' ) );
 		add_action( 'wp_ajax_ivy_st_add_comment', array( __CLASS__, 'ajax_add_comment' ) );
+		add_action( 'wp_ajax_ivy_st_presign', array( __CLASS__, 'ajax_presign' ) );
+		add_action( 'wp_ajax_ivy_st_presign_get', array( __CLASS__, 'ajax_presign_get' ) );
 		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue_assets' ) );
 	}
 
@@ -154,14 +156,21 @@ class AdminPages {
 			'ajaxUrl' => admin_url( 'admin-ajax.php' ),
 			'nonce'   => wp_create_nonce( self::NONCE_AJAX ),
 			'i18n'    => array(
-				'testing'        => __( '연결 확인 중...', 'ivy-support-ticket' ),
-				'success'        => __( '연결 성공', 'ivy-support-ticket' ),
-				'failed'         => __( '연결 실패', 'ivy-support-ticket' ),
-				'submitting'     => __( '제출 중...', 'ivy-support-ticket' ),
-				'created'        => __( '티켓이 발행되었습니다.', 'ivy-support-ticket' ),
-				'commenting'     => __( '댓글 등록 중...', 'ivy-support-ticket' ),
-				'commentDone'    => __( '댓글이 등록되었습니다.', 'ivy-support-ticket' ),
-				'genericError'   => __( '요청에 실패했습니다.', 'ivy-support-ticket' ),
+				'testing'         => __( '연결 확인 중...', 'ivy-support-ticket' ),
+				'success'         => __( '연결 성공', 'ivy-support-ticket' ),
+				'failed'          => __( '연결 실패', 'ivy-support-ticket' ),
+				'submitting'      => __( '제출 중...', 'ivy-support-ticket' ),
+				'created'         => __( '티켓이 발행되었습니다.', 'ivy-support-ticket' ),
+				'commenting'      => __( '댓글 등록 중...', 'ivy-support-ticket' ),
+				'commentDone'     => __( '댓글이 등록되었습니다.', 'ivy-support-ticket' ),
+				'genericError'    => __( '요청에 실패했습니다.', 'ivy-support-ticket' ),
+				'attachUploading' => __( '업로드 중...', 'ivy-support-ticket' ),
+				'attachDone'      => __( '완료', 'ivy-support-ticket' ),
+				'attachTooLarge'  => __( '파일이 10MB를 초과합니다.', 'ivy-support-ticket' ),
+				'attachBadType'   => __( '허용되지 않는 파일 형식입니다.', 'ivy-support-ticket' ),
+				'attachTooMany'   => __( '첨부는 최대 ${n}개입니다.', 'ivy-support-ticket' ),
+				'attachR2Cors'    => __( 'R2 업로드 실패. 사이트 도메인의 R2 CORS 등록을 확인하세요.', 'ivy-support-ticket' ),
+				'downloading'     => __( '준비 중...', 'ivy-support-ticket' ),
 			),
 		);
 
@@ -176,11 +185,22 @@ class AdminPages {
 			wp_localize_script( 'ivy-st-settings', 'IVY_ST', $shared );
 		}
 
+		if ( $page === self::SLUG_NEW || $page === self::SLUG_SHOW ) {
+			// 첨부 업로더 — new/show 양쪽에서 동일 모듈을 공유한다.
+			wp_enqueue_script(
+				'ivy-st-attach-uploader',
+				IVY_ST_PLUGIN_URL . 'assets/js/attach-uploader.js',
+				array( 'jquery' ),
+				IVY_ST_VERSION,
+				true
+			);
+		}
+
 		if ( $page === self::SLUG_NEW ) {
 			wp_enqueue_script(
 				'ivy-st-ticket-new',
 				IVY_ST_PLUGIN_URL . 'assets/js/ticket-new.js',
-				array( 'jquery' ),
+				array( 'jquery', 'ivy-st-attach-uploader' ),
 				IVY_ST_VERSION,
 				true
 			);
@@ -191,7 +211,7 @@ class AdminPages {
 			wp_enqueue_script(
 				'ivy-st-ticket-show',
 				IVY_ST_PLUGIN_URL . 'assets/js/ticket-show.js',
-				array( 'jquery' ),
+				array( 'jquery', 'ivy-st-attach-uploader' ),
 				IVY_ST_VERSION,
 				true
 			);
@@ -352,6 +372,11 @@ class AdminPages {
 			$payload['metadata'] = $metadata;
 		}
 
+		$attachments = self::sanitize_attachments_param();
+		if ( ! empty( $attachments ) ) {
+			$payload['attachments'] = $attachments;
+		}
+
 		$result = $api->create_ticket( $payload );
 		if ( is_wp_error( $result ) ) {
 			wp_send_json_error( array( 'message' => $result->get_error_message() ) );
@@ -389,6 +414,7 @@ class AdminPages {
 
 		$ticket_id = isset( $_POST['ticketId'] ) ? sanitize_text_field( wp_unslash( $_POST['ticketId'] ) ) : '';
 		$body      = isset( $_POST['body'] ) ? wp_kses_post( wp_unslash( $_POST['body'] ) ) : '';
+		$attachments = self::sanitize_attachments_param();
 
 		if ( $ticket_id === '' ) {
 			wp_send_json_error( array( 'message' => __( '티켓 ID가 누락되었습니다.', 'ivy-support-ticket' ) ) );
@@ -397,17 +423,110 @@ class AdminPages {
 			wp_send_json_error( array( 'message' => __( '댓글 내용을 입력하세요.', 'ivy-support-ticket' ) ) );
 		}
 
-		$result = $api->add_comment(
-			$ticket_id,
-			array(
-				'userEmail' => $user->user_email,
-				'body'      => $body,
-			)
+		$payload = array(
+			'userEmail' => $user->user_email,
+			'body'      => $body,
 		);
+		if ( ! empty( $attachments ) ) {
+			$payload['attachments'] = $attachments;
+		}
+
+		$result = $api->add_comment( $ticket_id, $payload );
 		if ( is_wp_error( $result ) ) {
 			wp_send_json_error( array( 'message' => $result->get_error_message() ) );
 		}
 
 		wp_send_json_success( $result );
+	}
+
+	/**
+	 * R2 PutObject용 presigned URL 발급 — 브라우저가 파일을 직접 PUT하기 직전에 호출.
+	 */
+	public static function ajax_presign(): void {
+		check_ajax_referer( self::NONCE_AJAX );
+		if ( ! self::current_user_can_use() ) {
+			wp_send_json_error( array( 'message' => __( '권한이 없습니다.', 'ivy-support-ticket' ) ), 403 );
+		}
+
+		$filename  = isset( $_POST['filename'] ) ? sanitize_file_name( wp_unslash( $_POST['filename'] ) ) : '';
+		$mime_type = isset( $_POST['mimeType'] ) ? sanitize_text_field( wp_unslash( $_POST['mimeType'] ) ) : '';
+		$file_size = isset( $_POST['fileSize'] ) ? absint( $_POST['fileSize'] ) : 0;
+
+		if ( $filename === '' || $mime_type === '' || $file_size <= 0 ) {
+			wp_send_json_error( array( 'message' => __( '잘못된 파일 정보입니다.', 'ivy-support-ticket' ) ) );
+		}
+		if ( $file_size > 10 * 1024 * 1024 ) {
+			wp_send_json_error( array( 'message' => __( '파일 크기는 10MB 이하여야 합니다.', 'ivy-support-ticket' ) ) );
+		}
+
+		$api    = new ApiClient();
+		$result = $api->presign_put( $filename, $mime_type, $file_size );
+		if ( is_wp_error( $result ) ) {
+			wp_send_json_error( array( 'message' => $result->get_error_message() ) );
+		}
+		wp_send_json_success( $result );
+	}
+
+	/**
+	 * R2 GetObject용 presigned URL 발급 — 첨부 다운로드 클릭 시 호출.
+	 */
+	public static function ajax_presign_get(): void {
+		check_ajax_referer( self::NONCE_AJAX );
+		if ( ! self::current_user_can_use() ) {
+			wp_send_json_error( array( 'message' => __( '권한이 없습니다.', 'ivy-support-ticket' ) ), 403 );
+		}
+
+		$r2_key = isset( $_POST['r2Key'] ) ? sanitize_text_field( wp_unslash( $_POST['r2Key'] ) ) : '';
+		if ( $r2_key === '' ) {
+			wp_send_json_error( array( 'message' => __( 'r2Key가 필요합니다.', 'ivy-support-ticket' ) ) );
+		}
+
+		$api    = new ApiClient();
+		$result = $api->presign_get( $r2_key );
+		if ( is_wp_error( $result ) ) {
+			wp_send_json_error( array( 'message' => $result->get_error_message() ) );
+		}
+		wp_send_json_success( $result );
+	}
+
+	/**
+	 * 폼에서 보내온 attachments JSON 문자열을 검증된 배열로 변환한다.
+	 * 각 첨부는 `{r2Key, fileName, fileSize, mimeType}` 4종 필드를 모두 가져야 하며,
+	 * 최대 5개로 제한한다.
+	 *
+	 * @return array
+	 */
+	private static function sanitize_attachments_param(): array {
+		$raw = isset( $_POST['attachments'] ) ? wp_unslash( $_POST['attachments'] ) : '';
+		if ( ! is_string( $raw ) || $raw === '' ) {
+			return array();
+		}
+		$decoded = json_decode( $raw, true );
+		if ( ! is_array( $decoded ) ) {
+			return array();
+		}
+		$out = array();
+		foreach ( $decoded as $item ) {
+			if ( ! is_array( $item ) ) {
+				continue;
+			}
+			$r2_key    = isset( $item['r2Key'] ) ? (string) $item['r2Key'] : '';
+			$file_name = isset( $item['fileName'] ) ? (string) $item['fileName'] : '';
+			$file_size = isset( $item['fileSize'] ) ? (int) $item['fileSize'] : 0;
+			$mime_type = isset( $item['mimeType'] ) ? (string) $item['mimeType'] : '';
+			if ( $r2_key === '' || $file_name === '' || $file_size <= 0 || $mime_type === '' ) {
+				continue;
+			}
+			$out[] = array(
+				'r2Key'    => $r2_key,
+				'fileName' => sanitize_text_field( $file_name ),
+				'fileSize' => $file_size,
+				'mimeType' => sanitize_text_field( $mime_type ),
+			);
+			if ( count( $out ) >= 5 ) {
+				break;
+			}
+		}
+		return $out;
 	}
 }

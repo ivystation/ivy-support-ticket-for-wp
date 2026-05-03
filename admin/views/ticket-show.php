@@ -110,9 +110,10 @@ $ticket_id = isset( $_GET['id'] ) ? sanitize_text_field( wp_unslash( $_GET['id']
 			<?php foreach ( $ticket['attachments'] as $a ) : ?>
 				<li>
 					<span class="dashicons dashicons-paperclip"></span>
-					<span class="ivy-st-att-name"><?php echo esc_html( (string) ( $a['fileName'] ?? '' ) ); ?></span>
+					<a href="#" class="ivy-st-att-download" data-r2key="<?php echo esc_attr( (string) ( $a['r2Key'] ?? '' ) ); ?>">
+						<?php echo esc_html( (string) ( $a['fileName'] ?? '' ) ); ?>
+					</a>
 					<span class="ivy-st-att-size">(<?php echo esc_html( size_format( (int) ( $a['fileSize'] ?? 0 ) ) ); ?>)</span>
-					<span class="ivy-st-att-note">— <?php esc_html_e( '다운로드는 다음 단계에서 활성화됩니다.', 'ivy-support-ticket' ); ?></span>
 				</li>
 			<?php endforeach; ?>
 		</ul>
@@ -155,6 +156,15 @@ $ticket_id = isset( $_GET['id'] ) ? sanitize_text_field( wp_unslash( $_GET['id']
 		<?php wp_nonce_field( \IvyST\AdminPages::NONCE_AJAX, '_wpnonce' ); ?>
 		<label for="ivy-st-comment-body" class="screen-reader-text"><?php esc_html_e( '댓글 작성', 'ivy-support-ticket' ); ?></label>
 		<textarea id="ivy-st-comment-body" name="body" rows="4" required maxlength="20000" placeholder="<?php esc_attr_e( '댓글을 입력하세요.', 'ivy-support-ticket' ); ?>"></textarea>
+
+		<div class="ivy-st-attach-area ivy-st-attach-area-inline">
+			<input type="file" id="ivy-st-comment-attach-input" multiple
+			       accept="image/jpeg,image/png,image/gif,image/webp,image/svg+xml,application/pdf,text/plain,text/csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/zip,application/x-zip-compressed" />
+			<span class="description"><?php esc_html_e( '첨부 — 최대 5개 / 각 10MB 이하', 'ivy-support-ticket' ); ?></span>
+			<ul id="ivy-st-comment-attach-list" class="ivy-st-attach-list" aria-live="polite"></ul>
+			<input type="hidden" name="attachments" id="ivy-st-comment-attach-data" value="[]" />
+		</div>
+
 		<div class="ivy-st-comment-actions">
 			<button type="submit" class="button button-primary"><?php esc_html_e( '댓글 작성', 'ivy-support-ticket' ); ?></button>
 			<span id="ivy-st-comment-result" class="ivy-st-result-inline" aria-live="polite"></span>

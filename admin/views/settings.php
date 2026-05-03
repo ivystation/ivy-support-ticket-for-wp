@@ -182,6 +182,37 @@ if ( ! function_exists( 'wp_get_user_roles_for_select' ) ) {
 						</label>
 					</td>
 				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( '첨부 업로드 (R2 CORS)', 'ivy-support-ticket' ); ?></th>
+					<td>
+						<p class="description">
+							<?php esc_html_e( '브라우저가 Cloudflare R2에 직접 PUT으로 첨부를 업로드하므로, R2 버킷의 CORS 정책에 이 사이트의 도메인을 등록해야 합니다.', 'ivy-support-ticket' ); ?>
+						</p>
+						<details class="ivy-st-cors-help">
+							<summary><?php esc_html_e( '권장 CORS 규칙 보기', 'ivy-support-ticket' ); ?></summary>
+							<pre class="ivy-st-cors-pre"><code><?php
+								$origin = home_url();
+								echo esc_html(
+									wp_json_encode(
+										array(
+											array(
+												'AllowedOrigins' => array( $origin ),
+												'AllowedMethods' => array( 'PUT', 'GET', 'HEAD' ),
+												'AllowedHeaders' => array( '*' ),
+												'ExposeHeaders'  => array( 'ETag' ),
+												'MaxAgeSeconds'  => 3600,
+											),
+										),
+										JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES
+									)
+								);
+							?></code></pre>
+							<p class="description">
+								<?php esc_html_e( '여러 사이트에 플러그인을 설치한 경우, 각 사이트의 origin을 AllowedOrigins 배열에 모두 추가하거나 와일드카드를 사용하세요.', 'ivy-support-ticket' ); ?>
+							</p>
+						</details>
+					</td>
+				</tr>
 			</table>
 		<?php endif; ?>
 
