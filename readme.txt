@@ -4,7 +4,7 @@ Tags: support, ticket, helpdesk, headless, ivynet
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 0.1.1
+Stable tag: 0.1.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -30,6 +30,11 @@ License URI: https://www.gnu.org/licenses/gpl-2.0.html
 4. 사용자 매핑 탭에서 티켓을 발행할 사용자 확인 (administrator/editor는 자동 등록됨)
 
 == Changelog ==
+
+= 0.1.2 =
+* feat(설정): 사용자 매핑 탭 UI 개편 — 전체 사용자 목록 대신 등록된 사용자만 카드 형태로 표시.
+* feat(설정): 이메일/이름/아이디로 검색해 사용자 추가, 행별 "해지" 버튼으로 즉시 해제. AJAX 기반.
+* 기존 "관리자/편집자 전체로 초기화"·"신규 admin/editor 자동 등록" 옵션은 그대로 유지.
 
 = 0.1.1 =
 * fix: 설정 폼 탭 분리 처리 — "API 연결" 탭에서 저장 시 사용자 매핑(allowed_user_ids)이 빈 배열로 덮어써지던 문제 해결. 활성 탭의 필드만 patch에 포함하도록 수정.

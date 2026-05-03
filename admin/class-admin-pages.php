@@ -27,6 +27,9 @@ class AdminPages {
 		add_action( 'wp_ajax_ivy_st_add_comment', array( __CLASS__, 'ajax_add_comment' ) );
 		add_action( 'wp_ajax_ivy_st_presign', array( __CLASS__, 'ajax_presign' ) );
 		add_action( 'wp_ajax_ivy_st_presign_get', array( __CLASS__, 'ajax_presign_get' ) );
+		add_action( 'wp_ajax_ivy_st_user_search', array( __CLASS__, 'ajax_user_search' ) );
+		add_action( 'wp_ajax_ivy_st_user_add', array( __CLASS__, 'ajax_user_add' ) );
+		add_action( 'wp_ajax_ivy_st_user_remove', array( __CLASS__, 'ajax_user_remove' ) );
 		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue_assets' ) );
 	}
 
@@ -178,6 +181,13 @@ class AdminPages {
 			wp_enqueue_script(
 				'ivy-st-settings',
 				IVY_ST_PLUGIN_URL . 'assets/js/settings.js',
+				array( 'jquery' ),
+				IVY_ST_VERSION,
+				true
+			);
+			wp_enqueue_script(
+				'ivy-st-users',
+				IVY_ST_PLUGIN_URL . 'assets/js/users.js',
 				array( 'jquery' ),
 				IVY_ST_VERSION,
 				true
@@ -505,6 +515,121 @@ class AdminPages {
 			wp_send_json_error( array( 'message' => $result->get_error_message() ) );
 		}
 		wp_send_json_success( $result );
+	}
+
+	/**
+	 * 사용자 매핑 — 이메일/이름/아이디로 WP 사용자를 검색해 후보 목록을 반환.
+	 * `IVY_ST_OPT_SETTINGS.allowed_user_ids`에 이미 포함된 사용자는 `enrolled=true`로 표시.
+	 */
+	public static function ajax_user_search(): void {
+		check_ajax_referer( self::NONCE_AJAX );
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( '권한이 없습니다.', 'ivy-support-ticket' ) ), 403 );
+		}
+
+		$q = isset( $_POST['q'] ) ? trim( sanitize_text_field( wp_unslash( $_POST['q'] ) ) ) : '';
+		if ( $q === '' || mb_strlen( $q ) < 2 ) {
+			wp_send_json_error(
+				array( 'message' => __( '검색어는 2자 이상 입력해 주세요.', 'ivy-support-ticket' ) )
+			);
+		}
+
+		$settings    = Settings::get();
+		$enrolled_ids = array_map( 'absint', (array) $settings['allowed_user_ids'] );
+
+		$query = new \WP_User_Query(
+			array(
+				'search'         => '*' . $q . '*',
+				'search_columns' => array( 'user_email', 'user_login', 'display_name' ),
+				'fields'         => array( 'ID', 'user_email', 'user_login', 'display_name' ),
+				'orderby'        => 'display_name',
+				'order'          => 'ASC',
+				'number'         => 30,
+			)
+		);
+		$results = array();
+		foreach ( (array) $query->get_results() as $u ) {
+			$wp_user = get_userdata( (int) $u->ID );
+			$roles   = $wp_user ? (array) $wp_user->roles : array();
+			$results[] = array(
+				'id'           => (int) $u->ID,
+				'display_name' => (string) $u->display_name,
+				'email'        => (string) $u->user_email,
+				'login'        => (string) $u->user_login,
+				'roles'        => $roles,
+				'enrolled'     => in_array( (int) $u->ID, $enrolled_ids, true ),
+			);
+		}
+
+		wp_send_json_success( array( 'results' => $results ) );
+	}
+
+	/** 사용자 매핑 — 단건 추가. 정상 처리 후 갱신된 사용자 정보를 반환. */
+	public static function ajax_user_add(): void {
+		check_ajax_referer( self::NONCE_AJAX );
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( '권한이 없습니다.', 'ivy-support-ticket' ) ), 403 );
+		}
+
+		$user_id = isset( $_POST['user_id'] ) ? absint( $_POST['user_id'] ) : 0;
+		if ( $user_id <= 0 ) {
+			wp_send_json_error( array( 'message' => __( '유효하지 않은 사용자 ID입니다.', 'ivy-support-ticket' ) ) );
+		}
+		$wp_user = get_userdata( $user_id );
+		if ( ! $wp_user ) {
+			wp_send_json_error( array( 'message' => __( '존재하지 않는 사용자입니다.', 'ivy-support-ticket' ) ) );
+		}
+
+		$settings = Settings::get();
+		$ids      = array_map( 'absint', (array) $settings['allowed_user_ids'] );
+		if ( ! in_array( $user_id, $ids, true ) ) {
+			$ids[] = $user_id;
+			Settings::update( array( 'allowed_user_ids' => $ids ) );
+		}
+
+		wp_send_json_success(
+			array(
+				'user' => self::format_user_for_ui( $wp_user ),
+			)
+		);
+	}
+
+	/** 사용자 매핑 — 단건 해지. */
+	public static function ajax_user_remove(): void {
+		check_ajax_referer( self::NONCE_AJAX );
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( '권한이 없습니다.', 'ivy-support-ticket' ) ), 403 );
+		}
+
+		$user_id = isset( $_POST['user_id'] ) ? absint( $_POST['user_id'] ) : 0;
+		if ( $user_id <= 0 ) {
+			wp_send_json_error( array( 'message' => __( '유효하지 않은 사용자 ID입니다.', 'ivy-support-ticket' ) ) );
+		}
+
+		$settings = Settings::get();
+		$ids      = array_map( 'absint', (array) $settings['allowed_user_ids'] );
+		$ids      = array_values( array_filter( $ids, static fn( $id ) => $id !== $user_id ) );
+		Settings::update( array( 'allowed_user_ids' => $ids ) );
+
+		wp_send_json_success( array( 'user_id' => $user_id ) );
+	}
+
+	/**
+	 * UI에 사용할 사용자 객체 표현 — 검색 결과·등록 목록 양쪽에서 공유.
+	 *
+	 * @param \WP_User $u
+	 * @return array
+	 */
+	public static function format_user_for_ui( \WP_User $u ): array {
+		$pm_user_id = (string) get_user_meta( (int) $u->ID, IVY_ST_USERMETA_PM_USER_ID, true );
+		return array(
+			'id'           => (int) $u->ID,
+			'display_name' => (string) $u->display_name,
+			'email'        => (string) $u->user_email,
+			'login'        => (string) $u->user_login,
+			'roles'        => (array) $u->roles,
+			'pm_user_id'   => $pm_user_id,
+		);
 	}
 
 	/**

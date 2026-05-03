@@ -20,26 +20,17 @@ $tabs = array(
 	'info'       => __( '정보', 'ivy-support-ticket' ),
 );
 
-$users = get_users(
-	array(
-		'fields'  => array( 'ID', 'user_email', 'display_name' ),
-		'orderby' => 'display_name',
-		'order'   => 'ASC',
-		'number'  => -1,
-	)
-);
-
-if ( ! function_exists( 'wp_get_user_roles_for_select' ) ) {
-	/**
-	 * 한 user의 역할 라벨을 콤마 구분으로 합쳐 반환.
-	 */
-	function wp_get_user_roles_for_select( int $user_id ): string {
-		$u = get_userdata( $user_id );
-		if ( ! $u ) {
-			return '';
-		}
-		return implode( ', ', (array) $u->roles );
+// 사용자 매핑 탭에서 표시할 "등록된 사용자" 목록.
+// AJAX로 추가/해지될 때마다 JS가 행을 즉시 갱신하지만,
+// 페이지 첫 로드 시점에는 서버측에서 한 번 렌더링한다.
+$enrolled_users = array();
+$enrolled_ids   = array_map( 'absint', (array) $settings['allowed_user_ids'] );
+foreach ( $enrolled_ids as $uid ) {
+	$wp_u = get_userdata( $uid );
+	if ( ! $wp_u ) {
+		continue;
 	}
+	$enrolled_users[] = \IvyST\AdminPages::format_user_for_ui( $wp_u );
 }
 ?>
 <div class="wrap ivy-st-settings">
@@ -108,41 +99,63 @@ if ( ! function_exists( 'wp_get_user_roles_for_select' ) ) {
 
 		<?php elseif ( $active_tab === 'users' ) : ?>
 			<p class="description ivy-st-section-help">
-				<?php esc_html_e( '아래 목록에서 티켓을 발행할 수 있는 워드프레스 사용자를 선택하세요. 활성화 시 administrator·editor 역할의 모든 사용자가 자동 등록됩니다.', 'ivy-support-ticket' ); ?>
+				<?php esc_html_e( '티켓을 발행할 수 있는 워드프레스 사용자만 명시적으로 등록·해지하세요. 활성화 시 administrator·editor가 자동으로 등록되어 있습니다.', 'ivy-support-ticket' ); ?>
 			</p>
 
+			<h2 class="ivy-st-mapping-h">
+				<?php esc_html_e( '등록된 사용자', 'ivy-support-ticket' ); ?>
+				<span id="ivy-st-allowed-count" class="ivy-st-count">(<?php echo (int) count( $enrolled_users ); ?>)</span>
+			</h2>
+
+			<ul id="ivy-st-allowed-list" class="ivy-st-mapping-list">
+				<?php if ( empty( $enrolled_users ) ) : ?>
+					<li class="ivy-st-mapping-empty">
+						<?php esc_html_e( '아직 등록된 사용자가 없습니다. 아래 검색으로 사용자를 추가하세요.', 'ivy-support-ticket' ); ?>
+					</li>
+				<?php else : ?>
+					<?php foreach ( $enrolled_users as $u ) : ?>
+						<li class="ivy-st-mapping-item" data-user-id="<?php echo (int) $u['id']; ?>">
+							<div class="ivy-st-mapping-info">
+								<strong class="ivy-st-mapping-name"><?php echo esc_html( $u['display_name'] ); ?></strong>
+								<span class="ivy-st-mapping-email"><?php echo esc_html( $u['email'] ); ?></span>
+								<span class="ivy-st-mapping-roles"><?php echo esc_html( implode( ', ', $u['roles'] ) ); ?></span>
+								<?php if ( ! empty( $u['pm_user_id'] ) ) : ?>
+									<span class="ivy-st-mapping-pm" title="<?php esc_attr_e( 'pm 시스템에 매핑됨', 'ivy-support-ticket' ); ?>">✓ pm</span>
+								<?php endif; ?>
+							</div>
+							<button type="button" class="button button-link-delete ivy-st-remove-btn">
+								<?php esc_html_e( '해지', 'ivy-support-ticket' ); ?>
+							</button>
+						</li>
+					<?php endforeach; ?>
+				<?php endif; ?>
+			</ul>
+
+			<h2 class="ivy-st-mapping-h"><?php esc_html_e( '사용자 추가', 'ivy-support-ticket' ); ?></h2>
+
+			<div class="ivy-st-search-box">
+				<label for="ivy-st-user-search" class="screen-reader-text">
+					<?php esc_html_e( '이메일 또는 이름으로 사용자 검색', 'ivy-support-ticket' ); ?>
+				</label>
+				<input type="search" id="ivy-st-user-search" class="regular-text"
+				       placeholder="<?php esc_attr_e( '이메일 / 이름 / 아이디로 검색 (2자 이상)', 'ivy-support-ticket' ); ?>" />
+				<button type="button" id="ivy-st-search-btn" class="button">
+					<?php esc_html_e( '검색', 'ivy-support-ticket' ); ?>
+				</button>
+				<span id="ivy-st-search-status" class="ivy-st-search-status" aria-live="polite"></span>
+			</div>
+
+			<ul id="ivy-st-search-results" class="ivy-st-mapping-list ivy-st-search-results"></ul>
+
+			<h2 class="ivy-st-mapping-h"><?php esc_html_e( '옵션', 'ivy-support-ticket' ); ?></h2>
 			<table class="form-table" role="presentation">
-				<tr>
-					<th scope="row"><?php esc_html_e( '허용된 사용자', 'ivy-support-ticket' ); ?></th>
-					<td>
-						<select name="allowed_user_ids[]" multiple class="ivy-st-user-select" size="10" style="min-width:480px">
-							<?php foreach ( $users as $u ) : ?>
-								<?php
-								$selected = in_array( (int) $u->ID, array_map( 'absint', (array) $settings['allowed_user_ids'] ), true );
-								$pm_id    = (string) get_user_meta( (int) $u->ID, IVY_ST_USERMETA_PM_USER_ID, true );
-								$roles    = wp_get_user_roles_for_select( (int) $u->ID );
-								$label    = sprintf( '%s — %s [%s]', $u->display_name, $u->user_email, $roles );
-								if ( $pm_id !== '' ) {
-									$label .= ' ✓';
-								}
-								?>
-								<option value="<?php echo (int) $u->ID; ?>" <?php selected( $selected ); ?>>
-									<?php echo esc_html( $label ); ?>
-								</option>
-							<?php endforeach; ?>
-						</select>
-						<p class="description">
-							<?php esc_html_e( 'Ctrl(또는 Cmd) 클릭으로 다중 선택. ✓ 표시는 pm 시스템에 매핑이 완료된 사용자입니다.', 'ivy-support-ticket' ); ?>
-						</p>
-					</td>
-				</tr>
 				<tr>
 					<th scope="row"><?php esc_html_e( '자동 등록', 'ivy-support-ticket' ); ?></th>
 					<td>
 						<label>
 							<input type="checkbox" name="auto_enroll_admin_editor" value="1"
 							       <?php checked( ! empty( $settings['auto_enroll_admin_editor'] ) ); ?> />
-							<?php esc_html_e( '신규 또는 권한이 administrator/editor로 변경된 사용자를 자동으로 허용 목록에 추가', 'ivy-support-ticket' ); ?>
+							<?php esc_html_e( '신규 또는 권한이 administrator/editor로 변경된 사용자를 자동으로 등록', 'ivy-support-ticket' ); ?>
 						</label>
 					</td>
 				</tr>
@@ -151,7 +164,7 @@ if ( ! function_exists( 'wp_get_user_roles_for_select' ) ) {
 					<td>
 						<button type="submit" name="ivy_st_reset_to_defaults" value="1"
 						        class="button"
-						        onclick="return confirm('<?php echo esc_js( __( '허용 사용자 목록을 administrator + editor 전체로 재설정하시겠습니까?', 'ivy-support-ticket' ) ); ?>');">
+						        onclick="return confirm('<?php echo esc_js( __( '등록된 사용자 목록을 administrator + editor 전체로 재설정하시겠습니까?', 'ivy-support-ticket' ) ); ?>');">
 							<?php esc_html_e( '관리자/편집자 전체로 초기화', 'ivy-support-ticket' ); ?>
 						</button>
 					</td>

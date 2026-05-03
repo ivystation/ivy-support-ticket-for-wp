@@ -292,6 +292,108 @@
 }
 .ivy-st-att-download:hover { text-decoration: underline; }
 
+/* 설정 → 사용자 매핑 탭 (검색·등록·해지) */
+.ivy-st-mapping-h {
+	font-size: 14px;
+	font-weight: 700;
+	margin: 24px 0 8px;
+	color: #1d2327;
+}
+.ivy-st-mapping-h .ivy-st-count {
+	color: #6b7280;
+	font-weight: 500;
+	font-size: 13px;
+	margin-left: 4px;
+}
+
+.ivy-st-mapping-list {
+	max-width: 760px;
+	list-style: none;
+	margin: 0 0 16px;
+	padding: 0;
+}
+.ivy-st-mapping-item {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	padding: 10px 14px;
+	border: 1px solid #dcdcde;
+	border-radius: 4px;
+	background: #fff;
+	margin-bottom: 6px;
+}
+.ivy-st-mapping-info {
+	flex: 1;
+	display: flex;
+	gap: 10px;
+	align-items: baseline;
+	flex-wrap: wrap;
+	min-width: 0;
+}
+.ivy-st-mapping-name {
+	font-weight: 700;
+	color: #1d2327;
+}
+.ivy-st-mapping-email {
+	color: #50575e;
+	font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+	font-size: 12px;
+}
+.ivy-st-mapping-roles {
+	font-size: 11px;
+	color: #6b7280;
+	background: #f0f0f1;
+	padding: 1px 6px;
+	border-radius: 3px;
+}
+.ivy-st-mapping-pm {
+	font-size: 11px;
+	color: #065f46;
+	background: #d1fae5;
+	padding: 1px 6px;
+	border-radius: 3px;
+	font-weight: 600;
+}
+.ivy-st-mapping-empty {
+	padding: 16px;
+	border: 1px dashed #c3c4c7;
+	border-radius: 4px;
+	color: #6b7280;
+	font-style: italic;
+	text-align: center;
+}
+.ivy-st-already {
+	color: #6b7280;
+	font-size: 12px;
+	font-style: italic;
+}
+
+/* 검색 박스 */
+.ivy-st-search-box {
+	max-width: 760px;
+	display: flex;
+	gap: 8px;
+	align-items: center;
+	margin: 0 0 12px;
+}
+.ivy-st-search-box .regular-text {
+	flex: 1;
+}
+.ivy-st-search-status {
+	font-size: 12px;
+	color: #50575e;
+	margin-left: 4px;
+}
+.ivy-st-search-status.is-success { color: #00a32a; }
+.ivy-st-search-status.is-error   { color: #d63638; }
+
+.ivy-st-search-results {
+	max-width: 760px;
+}
+.ivy-st-search-results .ivy-st-mapping-item {
+	background: #f6f7f7;
+}
+
 /* 설정 정보 탭 — R2 CORS 도움말 */
 .ivy-st-cors-help summary {
 	cursor: pointer;
