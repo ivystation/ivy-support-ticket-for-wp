@@ -25,3 +25,6 @@ node_modules/
 # WP 임시 파일
 *.bak
 *.swp
+
+# 내부 기획서/노트는 GitHub 공개 저장소 관리에서 제외
+docs/
