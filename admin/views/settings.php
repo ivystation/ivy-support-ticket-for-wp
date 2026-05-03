@@ -16,9 +16,11 @@ $masked     = \IvyST\Settings::masked_api_key();
 
 $tabs = array(
 	'connection' => __( 'API 연결', 'ivy-support-ticket' ),
+	'sso'        => __( 'SSO', 'ivy-support-ticket' ),
 	'users'      => __( '사용자 매핑', 'ivy-support-ticket' ),
 	'info'       => __( '정보', 'ivy-support-ticket' ),
 );
+$has_sso_secret = ! empty( $settings['sso_secret'] );
 
 // 사용자 매핑 탭에서 표시할 "등록된 사용자" 목록.
 // AJAX로 추가/해지될 때마다 JS가 행을 즉시 갱신하지만,
@@ -93,6 +95,50 @@ foreach ( $enrolled_ids as $uid ) {
 						<p class="description">
 							<?php esc_html_e( '저장된 API Key로 /api/external/wp/health를 호출합니다. 키 변경 후에는 먼저 저장 → 테스트 순서로 진행하세요.', 'ivy-support-ticket' ); ?>
 						</p>
+					</td>
+				</tr>
+			</table>
+
+		<?php elseif ( $active_tab === 'sso' ) : ?>
+			<p class="description ivy-st-section-help">
+				<?php esc_html_e( 'SSO를 활성화하면 메뉴 클릭 시 아래 티켓 URL로 자동 로그인됩니다. 시크릿 키는 ticket.ivynet.co.kr 서버의 SSO_SECRET 환경변수와 동일하게 설정하세요.', 'ivy-support-ticket' ); ?>
+			</p>
+			<table class="form-table" role="presentation">
+				<tr>
+					<th scope="row"><label for="ivy-st-ticket-url"><?php esc_html_e( '티켓 포털 URL', 'ivy-support-ticket' ); ?></label></th>
+					<td>
+						<input type="url" id="ivy-st-ticket-url" name="ticket_url"
+						       value="<?php echo esc_attr( (string) $settings['ticket_url'] ); ?>"
+						       class="regular-text" />
+						<p class="description"><?php esc_html_e( '기본값: https://ticket.ivynet.co.kr', 'ivy-support-ticket' ); ?></p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><label for="ivy-st-sso-secret"><?php esc_html_e( 'SSO 시크릿 키', 'ivy-support-ticket' ); ?></label></th>
+					<td>
+						<input type="text" id="ivy-st-sso-secret" name="sso_secret"
+						       value=""
+						       placeholder="<?php echo $has_sso_secret ? esc_attr__( '저장된 키 있음 — 변경 시에만 입력', 'ivy-support-ticket' ) : '32자 이상의 랜덤 문자열'; ?>"
+						       class="regular-text" autocomplete="off" />
+						<p class="description">
+							<?php
+							if ( $has_sso_secret ) {
+								esc_html_e( '저장된 시크릿이 있습니다. 변경하려면 새 값을 입력하세요. 비워 두면 기존 값 유지.', 'ivy-support-ticket' );
+							} else {
+								esc_html_e( 'pm 서버의 SSO_SECRET 환경변수와 동일한 값을 입력하세요. 32자 이상 권장.', 'ivy-support-ticket' );
+							}
+							?>
+						</p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'SSO 상태', 'ivy-support-ticket' ); ?></th>
+					<td>
+						<?php if ( \IvyST\Sso::is_configured() ) : ?>
+							<span style="color:#46b450;">&#10003; <?php esc_html_e( '활성화됨 — 메뉴 클릭 시 ticket 포털로 새 탭이 열립니다.', 'ivy-support-ticket' ); ?></span>
+						<?php else : ?>
+							<span style="color:#999;"><?php esc_html_e( '비활성화됨 — 티켓 포털 URL과 SSO 시크릿 키를 모두 입력하면 활성화됩니다.', 'ivy-support-ticket' ); ?></span>
+						<?php endif; ?>
 					</td>
 				</tr>
 			</table>
@@ -207,7 +253,7 @@ foreach ( $enrolled_ids as $uid ) {
 
 		<?php
 		// users 탭은 폼 submit 항목이 없다(검색·추가·해지는 모두 AJAX). 저장 버튼 숨김.
-		if ( $active_tab !== 'users' ) {
+		if ( ! in_array( $active_tab, array( 'users' ), true ) ) {
 			submit_button( __( '설정 저장', 'ivy-support-ticket' ) );
 		}
 		?>

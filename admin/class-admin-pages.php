@@ -227,6 +227,10 @@ class AdminPages {
 		if ( ! self::current_user_can_use() ) {
 			wp_die( esc_html__( '이 페이지에 접근할 권한이 없습니다.', 'ivy-support-ticket' ) );
 		}
+		if ( Sso::is_configured() ) {
+			self::render_sso_launcher( '/portal' );
+			return;
+		}
 		require IVY_ST_PLUGIN_DIR . 'admin/views/ticket-list.php';
 	}
 
@@ -234,7 +238,39 @@ class AdminPages {
 		if ( ! self::current_user_can_use() ) {
 			wp_die( esc_html__( '이 페이지에 접근할 권한이 없습니다.', 'ivy-support-ticket' ) );
 		}
+		if ( Sso::is_configured() ) {
+			self::render_sso_launcher( '/submit' );
+			return;
+		}
 		require IVY_ST_PLUGIN_DIR . 'admin/views/ticket-new.php';
+	}
+
+	/** SSO 활성화 시 렌더링 — ticket 포털을 새 탭으로 열고 안내 메시지를 표시한다. */
+	private static function render_sso_launcher( string $redirect ): void {
+		$url = Sso::get_sso_url( $redirect );
+		if ( is_wp_error( $url ) ) {
+			wp_die( esc_html( $url->get_error_message() ) );
+		}
+		$url_escaped  = esc_url( $url );
+		$url_js       = wp_json_encode( $url );
+		?>
+		<div class="wrap">
+			<h1><?php esc_html_e( 'Support Ticket 포털', 'ivy-support-ticket' ); ?></h1>
+			<div class="notice notice-info" style="padding:12px 16px;">
+				<p>
+					<?php esc_html_e( '티켓 포털이 새 탭으로 열렸습니다.', 'ivy-support-ticket' ); ?>
+					<a href="<?php echo $url_escaped; ?>" target="_blank" rel="noopener noreferrer">
+						<?php esc_html_e( '열리지 않으면 여기를 클릭하세요.', 'ivy-support-ticket' ); ?>
+					</a>
+				</p>
+			</div>
+		</div>
+		<script>
+		( function () {
+			window.open( <?php echo $url_js; ?>, '_blank', 'noopener,noreferrer' );
+		} )();
+		</script>
+		<?php
 	}
 
 	public static function render_show(): void {
@@ -274,6 +310,13 @@ class AdminPages {
 			// API Key는 입력 시에만 갱신, 빈 값이면 Settings::update에서 기존 유지.
 			if ( isset( $_POST['api_key'] ) ) {
 				$patch['api_key'] = wp_unslash( $_POST['api_key'] );
+			}
+		} elseif ( $tab === 'sso' ) {
+			if ( isset( $_POST['ticket_url'] ) ) {
+				$patch['ticket_url'] = wp_unslash( $_POST['ticket_url'] );
+			}
+			if ( isset( $_POST['sso_secret'] ) ) {
+				$patch['sso_secret'] = wp_unslash( $_POST['sso_secret'] );
 			}
 		} elseif ( $tab === 'info' ) {
 			$patch['debug'] = ! empty( $_POST['debug'] );

@@ -31,6 +31,7 @@ define( 'IVY_ST_OPT_SETTINGS', 'ivy_st_settings' );
 define( 'IVY_ST_USERMETA_PM_USER_ID', 'ivy_st_pm_user_id' );
 
 require_once IVY_ST_PLUGIN_DIR . 'includes/class-settings.php';
+require_once IVY_ST_PLUGIN_DIR . 'includes/class-sso.php';
 require_once IVY_ST_PLUGIN_DIR . 'includes/class-labels.php';
 require_once IVY_ST_PLUGIN_DIR . 'includes/class-api-client.php';
 require_once IVY_ST_PLUGIN_DIR . 'includes/class-user-mapping.php';

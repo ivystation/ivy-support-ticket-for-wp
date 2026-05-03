@@ -21,6 +21,8 @@ class Settings {
 			'api_key'          => '',
 			'allowed_user_ids' => array(),
 			'debug'            => false,
+			'ticket_url'       => 'https://ticket.ivynet.co.kr',
+			'sso_secret'       => '',
 		);
 	}
 
@@ -56,6 +58,15 @@ class Settings {
 		}
 		if ( array_key_exists( 'debug', $patch ) ) {
 			$next['debug'] = (bool) $patch['debug'];
+		}
+		if ( array_key_exists( 'ticket_url', $patch ) ) {
+			$next['ticket_url'] = esc_url_raw( trim( (string) $patch['ticket_url'] ) );
+		}
+		if ( array_key_exists( 'sso_secret', $patch ) ) {
+			$incoming = trim( (string) $patch['sso_secret'] );
+			if ( $incoming !== '' ) {
+				$next['sso_secret'] = $incoming;
+			}
 		}
 
 		// autoload=no — API Key가 들어 있으므로 모든 페이지 로드에 끌고 다니지 않는다.
