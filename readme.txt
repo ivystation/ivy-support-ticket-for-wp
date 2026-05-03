@@ -4,7 +4,7 @@ Tags: support, ticket, helpdesk, headless, ivynet
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 0.1.0
+Stable tag: 0.1.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -31,8 +31,12 @@ License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
 == Changelog ==
 
+= 0.1.1 =
+* fix: 설정 폼 탭 분리 처리 — "API 연결" 탭에서 저장 시 사용자 매핑(allowed_user_ids)이 빈 배열로 덮어써지던 문제 해결. 활성 탭의 필드만 patch에 포함하도록 수정.
+* 우회 방법: 설정 → 사용자 매핑 탭 → "관리자/편집자 전체로 초기화" 버튼으로 즉시 복구 가능
+
 = 0.1.0 =
 * 플러그인 골격, 메뉴, 설정 페이지, ApiClient, 사용자 매핑 자동 등록 (Phase 2)
 * 티켓 작성·목록·상세·댓글 UI (Phase 3)
 * 첨부파일 업로드(R2 직접 PUT) / 다운로드(Presigned GET) — 새 티켓·댓글 양쪽 지원 (Phase 4)
-* GitHub Releases 자동 업데이트는 다음 버전에서 활성화 (Phase 5)
+* GitHub Releases 기반 자동 업데이트 (PUC v5.6) (Phase 5)

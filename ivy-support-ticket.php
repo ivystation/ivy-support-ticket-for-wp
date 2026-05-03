@@ -3,7 +3,7 @@
  * Plugin Name:       Ivy Support Ticket for WordPress
  * Plugin URI:        https://github.com/ivystation/ivy-support-ticket-for-wp
  * Description:       워드프레스 어드민에서 직접 1:1 지원 티켓을 발행·관리하는 플러그인. pm.ivynet.co.kr API 연동, 자체 DB 미사용.
- * Version:           0.1.0
+ * Version:           0.1.1
  * Requires at least: 6.0
  * Requires PHP:      7.4
  * Author:            ivynet
@@ -19,7 +19,7 @@
 defined( 'ABSPATH' ) || exit;
 
 // 상수: 다른 모든 클래스가 참조하는 단일 진입점.
-define( 'IVY_ST_VERSION', '0.1.0' );
+define( 'IVY_ST_VERSION', '0.1.1' );
 define( 'IVY_ST_PLUGIN_FILE', __FILE__ );
 define( 'IVY_ST_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'IVY_ST_PLUGIN_URL', plugin_dir_url( __FILE__ ) );

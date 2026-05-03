@@ -247,27 +247,44 @@ class AdminPages {
 		require IVY_ST_PLUGIN_DIR . 'admin/views/settings.php';
 	}
 
-	/** 설정 폼 제출 — admin-post 핸들러. */
+	/**
+	 * 설정 폼 제출 — admin-post 핸들러.
+	 *
+	 * 폼이 단일이지만 표시되는 필드는 활성 탭 한 곳뿐이므로, hidden tab 값을
+	 * 기준으로 해당 탭의 필드만 patch에 포함시킨다. 그렇지 않으면 다른 탭의
+	 * 값(예: allowed_user_ids)이 빈 배열로 덮어써질 수 있다.
+	 */
 	public static function handle_save_settings(): void {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_die( esc_html__( '권한이 없습니다.', 'ivy-support-ticket' ) );
 		}
 		check_admin_referer( 'ivy_st_save_settings' );
 
-		$patch = array(
-			'api_base'                 => isset( $_POST['api_base'] ) ? wp_unslash( $_POST['api_base'] ) : '',
-			'allowed_user_ids'         => isset( $_POST['allowed_user_ids'] ) ? array_map( 'absint', (array) wp_unslash( $_POST['allowed_user_ids'] ) ) : array(),
-			'auto_enroll_admin_editor' => ! empty( $_POST['auto_enroll_admin_editor'] ),
-			'debug'                    => ! empty( $_POST['debug'] ),
-		);
-		// API Key는 입력 시에만 갱신, 빈 값이면 기존 유지.
-		if ( isset( $_POST['api_key'] ) ) {
-			$patch['api_key'] = wp_unslash( $_POST['api_key'] );
+		$tab   = isset( $_POST['tab'] ) ? sanitize_key( wp_unslash( $_POST['tab'] ) ) : 'connection';
+		$patch = array();
+
+		if ( $tab === 'connection' ) {
+			if ( isset( $_POST['api_base'] ) ) {
+				$patch['api_base'] = wp_unslash( $_POST['api_base'] );
+			}
+			// API Key는 입력 시에만 갱신, 빈 값이면 Settings::update에서 기존 유지.
+			if ( isset( $_POST['api_key'] ) ) {
+				$patch['api_key'] = wp_unslash( $_POST['api_key'] );
+			}
+		} elseif ( $tab === 'users' ) {
+			$patch['allowed_user_ids']         = isset( $_POST['allowed_user_ids'] )
+				? array_map( 'absint', (array) wp_unslash( $_POST['allowed_user_ids'] ) )
+				: array();
+			$patch['auto_enroll_admin_editor'] = ! empty( $_POST['auto_enroll_admin_editor'] );
+		} elseif ( $tab === 'info' ) {
+			$patch['debug'] = ! empty( $_POST['debug'] );
 		}
 
-		Settings::update( $patch );
+		if ( ! empty( $patch ) ) {
+			Settings::update( $patch );
+		}
 
-		// "기본값으로 재설정" 버튼은 별도 액션.
+		// "기본값으로 재설정" 버튼 — 사용자 매핑 탭 전용. allowed_user_ids만 갱신.
 		if ( isset( $_POST['ivy_st_reset_to_defaults'] ) ) {
 			Settings::update(
 				array( 'allowed_user_ids' => Settings::collect_admin_editor_user_ids() )
@@ -278,6 +295,7 @@ class AdminPages {
 			add_query_arg(
 				array(
 					'page'    => self::SLUG_SETTING,
+					'tab'     => $tab,
 					'updated' => '1',
 				),
 				admin_url( 'admin.php' )
