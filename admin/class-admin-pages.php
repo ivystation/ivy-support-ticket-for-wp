@@ -30,6 +30,7 @@ class AdminPages {
 		add_action( 'wp_ajax_ivy_st_user_search', array( __CLASS__, 'ajax_user_search' ) );
 		add_action( 'wp_ajax_ivy_st_user_add', array( __CLASS__, 'ajax_user_add' ) );
 		add_action( 'wp_ajax_ivy_st_user_remove', array( __CLASS__, 'ajax_user_remove' ) );
+		add_action( 'wp_ajax_ivy_st_user_list', array( __CLASS__, 'ajax_user_list' ) );
 		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue_assets' ) );
 	}
 
@@ -640,6 +641,60 @@ class AdminPages {
 		wp_send_json_success(
 			array(
 				'enrolled' => self::collect_enrolled_users(),
+			)
+		);
+	}
+
+	/**
+	 * 사용자 목록 — 미등록 사용자를 페이지네이션으로 반환 (듀얼 리스트 왼쪽 패널용).
+	 */
+	public static function ajax_user_list(): void {
+		check_ajax_referer( self::NONCE_AJAX );
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( '권한이 없습니다.', 'ivy-support-ticket' ) ), 403 );
+		}
+
+		$paged    = isset( $_POST['paged'] ) ? max( 1, absint( $_POST['paged'] ) ) : 1;
+		$q        = isset( $_POST['q'] ) ? trim( sanitize_text_field( wp_unslash( $_POST['q'] ) ) ) : '';
+		$per_page = 20;
+
+		$settings     = Settings::get();
+		$enrolled_ids = array_map( 'absint', (array) $settings['allowed_user_ids'] );
+
+		$args = array(
+			'fields'  => array( 'ID', 'user_email', 'user_login', 'display_name' ),
+			'orderby' => 'display_name',
+			'order'   => 'ASC',
+			'number'  => $per_page,
+			'offset'  => ( $paged - 1 ) * $per_page,
+		);
+		if ( ! empty( $enrolled_ids ) ) {
+			$args['exclude'] = $enrolled_ids;
+		}
+		if ( $q !== '' ) {
+			$args['search']         = '*' . $q . '*';
+			$args['search_columns'] = array( 'user_email', 'user_login', 'display_name' );
+		}
+
+		$query       = new \WP_User_Query( $args );
+		$total       = (int) $query->get_total();
+		$total_pages = max( 1, (int) ceil( $total / $per_page ) );
+		$results     = array();
+
+		foreach ( (array) $query->get_results() as $u ) {
+			$results[] = array(
+				'id'           => (int) $u->ID,
+				'display_name' => (string) $u->display_name,
+				'email'        => (string) $u->user_email,
+			);
+		}
+
+		wp_send_json_success(
+			array(
+				'results'     => $results,
+				'total'       => $total,
+				'total_pages' => $total_pages,
+				'paged'       => $paged,
 			)
 		);
 	}

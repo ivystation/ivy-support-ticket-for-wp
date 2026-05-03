@@ -64,185 +64,192 @@
 	}
 
 	// ────────────────────────────────────────────────
-	// 사용자 매핑 (사용자 매핑 탭)
+	// 사용자 매핑 — 듀얼 리스트 UI (사용자 매핑 탭)
 	// ────────────────────────────────────────────────
 	function bindUserMapping() {
-		var $list   = $('#ivy-st-allowed-list');
-		var $count  = $('#ivy-st-allowed-count');
-		var $input  = $('#ivy-st-user-search');
-		var $btn    = $('#ivy-st-search-btn');
-		var $status = $('#ivy-st-search-status');
-		var $result = $('#ivy-st-search-results');
+		var $leftList    = $('#ivy-st-left-list');
+		var $rightList   = $('#ivy-st-right-list');
+		var $leftSearch  = $('#ivy-st-left-search');
+		var $rightSearch = $('#ivy-st-right-search');
+		var $moveRight   = $('#ivy-st-move-right');
+		var $moveLeft    = $('#ivy-st-move-left');
+		var $pageInfo    = $('#ivy-st-page-info-text');
+		var $prevBtn     = $('#ivy-st-left-prev');
+		var $nextBtn     = $('#ivy-st-left-next');
 
-		if (!$list.length) {
+		if (!$leftList.length) {
 			return;
 		}
-		// eslint-disable-next-line no-console
-		console.log('[ivy-support-ticket] user mapping bound');
 
-		// ---- 등록된 사용자 해지 (이벤트 위임) ----
-		$list.on('click', '.ivy-st-remove-btn', function () {
-			var $li    = $(this).closest('.ivy-st-mapping-item');
-			var userId = parseInt($li.attr('data-user-id'), 10);
-			var name   = $li.find('.ivy-st-mapping-name').text();
-			if (!userId) return;
-			if (!window.confirm(name + ' — 등록을 해지할까요?')) return;
+		var state       = { page: 1, pages: 1, total: 0, q: '', loading: false };
+		var searchTimer = null;
 
-			var $remove = $(this);
-			$remove.prop('disabled', true).text('처리 중...');
+		fetchLeft(1, '');
 
-			$.post(IVY_ST.ajaxUrl, {
-				action:   'ivy_st_user_remove',
-				_wpnonce: IVY_ST.nonce,
-				user_id:  userId
-			})
-				.done(function (resp) {
-					if (resp && resp.success && resp.data) {
-						renderEnrolled(resp.data.enrolled || []);
-						syncSearchResultsAfterRemove(userId);
-					} else {
-						alert((resp && resp.data && resp.data.message) || '해지에 실패했습니다.');
-						$remove.prop('disabled', false).text('해지');
-					}
-				})
-				.fail(function () {
-					alert('해지 요청 실패');
-					$remove.prop('disabled', false).text('해지');
-				});
+		// 왼쪽 검색 (디바운스 300ms)
+		$leftSearch.on('input', function () {
+			clearTimeout(searchTimer);
+			var q = $.trim($(this).val());
+			searchTimer = setTimeout(function () {
+				state.q = q;
+				fetchLeft(1, state.q);
+			}, 300);
 		});
 
-		// ---- 검색 ----
-		function triggerSearch() {
-			var q = $.trim($input.val());
-			if (q.length < 2) {
-				$status.removeClass('is-success is-error').text('2자 이상 입력해 주세요.');
-				return;
+		// 페이지네이션
+		$prevBtn.on('click', function () {
+			if (state.page > 1) fetchLeft(state.page - 1, state.q);
+		});
+		$nextBtn.on('click', function () {
+			if (state.page < state.pages) fetchLeft(state.page + 1, state.q);
+		});
+
+		// 항목 선택 토글
+		$leftList.on('click', '.ivy-st-dual-item', function () {
+			$(this).toggleClass('is-selected');
+		});
+		$rightList.on('click', '.ivy-st-dual-item', function () {
+			$(this).toggleClass('is-selected');
+		});
+
+		// 오른쪽 패널 클라이언트 검색
+		$rightSearch.on('input', function () {
+			var q = $.trim($(this).val()).toLowerCase();
+			$rightList.find('.ivy-st-dual-item').each(function () {
+				var label = ($(this).attr('data-label') || '').toLowerCase();
+				$(this).toggle(q === '' || label.indexOf(q) !== -1);
+			});
+		});
+
+		// → 등록
+		$moveRight.on('click', function () {
+			var ids = getSelectedIds($leftList);
+			if (!ids.length) return;
+			setArrowsDisabled(true);
+			processUsers(ids, 'user_add', function (enrolled) {
+				if (enrolled) renderRight(enrolled);
+				fetchLeft(state.page, state.q);
+				setArrowsDisabled(false);
+			});
+		});
+
+		// ← 해지
+		$moveLeft.on('click', function () {
+			var ids = getSelectedIds($rightList);
+			if (!ids.length) return;
+			setArrowsDisabled(true);
+			processUsers(ids, 'user_remove', function (enrolled) {
+				if (enrolled) renderRight(enrolled);
+				fetchLeft(state.page, state.q);
+				setArrowsDisabled(false);
+			});
+		});
+
+		// ── 헬퍼 ──
+
+		function getSelectedIds($list) {
+			var ids = [];
+			$list.find('.ivy-st-dual-item.is-selected').each(function () {
+				var id = parseInt($(this).attr('data-user-id'), 10);
+				if (id) ids.push(id);
+			});
+			return ids;
+		}
+
+		function setArrowsDisabled(disabled) {
+			$moveRight.prop('disabled', disabled);
+			$moveLeft.prop('disabled', disabled);
+		}
+
+		/** AJAX add/remove를 순차 실행하고 마지막 enrolled 목록을 콜백으로 전달. */
+		function processUsers(ids, action, callback) {
+			var lastEnrolled = null;
+			function next(i) {
+				if (i >= ids.length) {
+					callback(lastEnrolled);
+					return;
+				}
+				$.post(IVY_ST.ajaxUrl, {
+					action:   'ivy_st_' + action,
+					_wpnonce: IVY_ST.nonce,
+					user_id:  ids[i]
+				})
+					.done(function (resp) {
+						if (resp && resp.success && resp.data && resp.data.enrolled) {
+							lastEnrolled = resp.data.enrolled;
+						}
+					})
+					.always(function () {
+						next(i + 1);
+					});
 			}
-			$status.removeClass('is-success is-error').text('검색 중...');
-			$result.empty();
+			next(0);
+		}
+
+		function fetchLeft(page, q) {
+			if (state.loading) return;
+			state.loading = true;
+			$leftList.html('<li class="ivy-st-dual-empty">로딩 중...</li>');
 
 			$.post(IVY_ST.ajaxUrl, {
-				action:   'ivy_st_user_search',
+				action:   'ivy_st_user_list',
 				_wpnonce: IVY_ST.nonce,
+				paged:    page,
 				q:        q
 			})
 				.done(function (resp) {
-					if (resp && resp.success) {
-						var users = (resp.data && resp.data.results) || [];
-						$status.text(users.length + '명 발견');
-						renderSearchResults(users);
+					if (resp && resp.success && resp.data) {
+						state.page  = resp.data.paged;
+						state.pages = resp.data.total_pages;
+						state.total = resp.data.total;
+						renderLeft(resp.data.results || []);
+						updatePagination();
 					} else {
-						var msg = (resp && resp.data && resp.data.message) || '검색에 실패했습니다.';
-						$status.addClass('is-error').text(msg);
+						$leftList.html('<li class="ivy-st-dual-empty">로드 실패</li>');
 					}
 				})
 				.fail(function () {
-					$status.addClass('is-error').text('검색 요청 실패');
-				});
-		}
-
-		$btn.on('click', triggerSearch);
-		$input.on('keydown', function (e) {
-			if (e.key === 'Enter') {
-				e.preventDefault();
-				triggerSearch();
-			}
-		});
-
-		// ---- 검색 결과에서 추가 ----
-		$result.on('click', '.ivy-st-add-btn', function () {
-			var $row    = $(this).closest('.ivy-st-mapping-item');
-			var userId  = parseInt($row.attr('data-user-id'), 10);
-			if (!userId) return;
-
-			var $addBtn = $(this);
-			$addBtn.prop('disabled', true).text('추가 중...');
-			// eslint-disable-next-line no-console
-			console.log('[ivy-support-ticket] user_add', userId);
-
-			$.post(IVY_ST.ajaxUrl, {
-				action:   'ivy_st_user_add',
-				_wpnonce: IVY_ST.nonce,
-				user_id:  userId
-			})
-				.done(function (resp) {
-					if (resp && resp.success && resp.data) {
-						renderEnrolled(resp.data.enrolled || []);
-						$addBtn.replaceWith('<span class="ivy-st-already">이미 등록됨</span>');
-					} else {
-						var msg = (resp && resp.data && resp.data.message) || '추가에 실패했습니다.';
-						alert(msg);
-						$addBtn.prop('disabled', false).text('추가');
-					}
+					$leftList.html('<li class="ivy-st-dual-empty">로드 실패</li>');
 				})
-				.fail(function (xhr) {
-					alert('추가 요청 실패 (HTTP ' + (xhr && xhr.status ? xhr.status : '0') + ')');
-					$addBtn.prop('disabled', false).text('추가');
+				.always(function () {
+					state.loading = false;
 				});
-		});
-
-		// ────────────── 렌더링 헬퍼 ──────────────
-
-		/** 서버가 돌려준 enrolled 배열로 등록된 사용자 목록 전체를 재렌더링한다. */
-		function renderEnrolled(users) {
-			$list.empty();
-			if (!users.length) {
-				$list.append('<li class="ivy-st-mapping-empty">아직 등록된 사용자가 없습니다. 위 검색으로 사용자를 추가하세요.</li>');
-			} else {
-				users.forEach(function (u) {
-					$list.append(buildRow(u, /* searchCard */ false));
-				});
-			}
-			$count.text('(' + users.length + ')');
 		}
 
-		function renderSearchResults(users) {
-			$result.empty();
+		function renderLeft(users) {
+			$leftList.empty();
 			if (!users.length) {
-				$result.html('<li class="ivy-st-mapping-empty">검색 결과가 없습니다.</li>');
+				$leftList.html('<li class="ivy-st-dual-empty">사용자가 없습니다.</li>');
 				return;
 			}
 			users.forEach(function (u) {
-				$result.append(buildRow(u, /* searchCard */ true));
+				$leftList.append(buildItem(u));
 			});
 		}
 
-		/** 해지 직후 검색 결과에 동일 user가 남아 있으면 "추가 가능" 상태로 전환. */
-		function syncSearchResultsAfterRemove(userId) {
-			var $row = $result.find('.ivy-st-mapping-item').filter(function () {
-				return parseInt($(this).attr('data-user-id'), 10) === userId;
+		function renderRight(users) {
+			$rightList.empty();
+			if (!users.length) {
+				$rightList.html('<li class="ivy-st-dual-empty">등록된 사용자가 없습니다.</li>');
+				return;
+			}
+			users.forEach(function (u) {
+				$rightList.append(buildItem(u));
 			});
-			if (!$row.length) return;
-			$row.find('.ivy-st-already').remove();
-			$row.find('.ivy-st-add-btn').remove();
-			$row.append(addBtnHtml());
 		}
 
-		function buildRow(u, searchCard) {
-			var $li = $('<li class="ivy-st-mapping-item"></li>').attr('data-user-id', String(u.id));
-			var $info = $('<div class="ivy-st-mapping-info"></div>')
-				.append($('<strong class="ivy-st-mapping-name"></strong>').text(u.display_name))
-				.append($('<span class="ivy-st-mapping-email"></span>').text(u.email))
-				.append($('<span class="ivy-st-mapping-roles"></span>').text((u.roles || []).join(', ')));
-			if (u.pm_user_id) {
-				$info.append('<span class="ivy-st-mapping-pm" title="pm 시스템에 매핑됨">✓ pm</span>');
-			}
-			$li.append($info);
-
-			if (searchCard) {
-				if (u.enrolled) {
-					$li.append('<span class="ivy-st-already">이미 등록됨</span>');
-				} else {
-					$li.append(addBtnHtml());
-				}
-			} else {
-				$li.append('<button type="button" class="button button-link-delete ivy-st-remove-btn">해지</button>');
-			}
-			return $li;
+		function buildItem(u) {
+			return $('<li class="ivy-st-dual-item"></li>')
+				.attr('data-user-id', String(u.id))
+				.attr('data-label', (u.display_name || '') + ' ' + (u.email || ''))
+				.append($('<span>').text((u.display_name || '') + ' '))
+				.append($('<span class="ivy-st-dual-email">').text('(' + (u.email || '') + ')'));
 		}
 
-		function addBtnHtml() {
-			return '<button type="button" class="button button-primary ivy-st-add-btn">추가</button>';
+		function updatePagination() {
+			$pageInfo.text('Page ' + state.page + ' of ' + state.pages);
+			$prevBtn.prop('disabled', state.page <= 1);
+			$nextBtn.prop('disabled', state.page >= state.pages);
 		}
 	}
 })(jQuery);

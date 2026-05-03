@@ -145,53 +145,50 @@ foreach ( $enrolled_ids as $uid ) {
 
 		<?php elseif ( $active_tab === 'users' ) : ?>
 			<p class="description ivy-st-section-help">
-				<?php esc_html_e( '티켓을 발행할 수 있는 워드프레스 사용자만 검색해 명시적으로 등록·해지하세요.', 'ivy-support-ticket' ); ?>
+				<?php esc_html_e( '왼쪽 목록에서 사용자를 클릭해 선택한 뒤 → 버튼으로 등록하거나, 오른쪽 목록에서 선택 후 ← 버튼으로 해지하세요.', 'ivy-support-ticket' ); ?>
 			</p>
 
-			<h2 class="ivy-st-mapping-h">
-				<?php esc_html_e( '등록된 사용자', 'ivy-support-ticket' ); ?>
-				<span id="ivy-st-allowed-count" class="ivy-st-count">(<?php echo (int) count( $enrolled_users ); ?>)</span>
-			</h2>
+			<div class="ivy-st-dual-list-wrap">
+				<div class="ivy-st-dual-panel">
+					<input type="search" id="ivy-st-left-search" class="ivy-st-dual-search"
+					       placeholder="<?php esc_attr_e( '이메일 / 이름 / 아이디 검색', 'ivy-support-ticket' ); ?>" />
+					<ul id="ivy-st-left-list" class="ivy-st-dual-list">
+						<li class="ivy-st-dual-empty"><?php esc_html_e( '로딩 중...', 'ivy-support-ticket' ); ?></li>
+					</ul>
+				</div>
 
-			<ul id="ivy-st-allowed-list" class="ivy-st-mapping-list">
-				<?php if ( empty( $enrolled_users ) ) : ?>
-					<li class="ivy-st-mapping-empty">
-						<?php esc_html_e( '아직 등록된 사용자가 없습니다. 아래 검색으로 사용자를 추가하세요.', 'ivy-support-ticket' ); ?>
-					</li>
-				<?php else : ?>
-					<?php foreach ( $enrolled_users as $u ) : ?>
-						<li class="ivy-st-mapping-item" data-user-id="<?php echo (int) $u['id']; ?>">
-							<div class="ivy-st-mapping-info">
-								<strong class="ivy-st-mapping-name"><?php echo esc_html( $u['display_name'] ); ?></strong>
-								<span class="ivy-st-mapping-email"><?php echo esc_html( $u['email'] ); ?></span>
-								<span class="ivy-st-mapping-roles"><?php echo esc_html( implode( ', ', $u['roles'] ) ); ?></span>
-								<?php if ( ! empty( $u['pm_user_id'] ) ) : ?>
-									<span class="ivy-st-mapping-pm" title="<?php esc_attr_e( 'pm 시스템에 매핑됨', 'ivy-support-ticket' ); ?>">✓ pm</span>
-								<?php endif; ?>
-							</div>
-							<button type="button" class="button button-link-delete ivy-st-remove-btn">
-								<?php esc_html_e( '해지', 'ivy-support-ticket' ); ?>
-							</button>
-						</li>
-					<?php endforeach; ?>
-				<?php endif; ?>
-			</ul>
+				<div class="ivy-st-dual-arrows">
+					<button type="button" id="ivy-st-move-right" class="button ivy-st-arrow-btn"
+					        title="<?php esc_attr_e( '선택 사용자 등록', 'ivy-support-ticket' ); ?>">&#10145;</button>
+					<button type="button" id="ivy-st-move-left" class="button ivy-st-arrow-btn"
+					        title="<?php esc_attr_e( '선택 사용자 해지', 'ivy-support-ticket' ); ?>">&#8592;</button>
+				</div>
 
-			<h2 class="ivy-st-mapping-h"><?php esc_html_e( '사용자 추가', 'ivy-support-ticket' ); ?></h2>
-
-			<div class="ivy-st-search-box">
-				<label for="ivy-st-user-search" class="screen-reader-text">
-					<?php esc_html_e( '이메일 또는 이름으로 사용자 검색', 'ivy-support-ticket' ); ?>
-				</label>
-				<input type="search" id="ivy-st-user-search" class="regular-text"
-				       placeholder="<?php esc_attr_e( '이메일 / 이름 / 아이디로 검색 (2자 이상)', 'ivy-support-ticket' ); ?>" />
-				<button type="button" id="ivy-st-search-btn" class="button">
-					<?php esc_html_e( '검색', 'ivy-support-ticket' ); ?>
-				</button>
-				<span id="ivy-st-search-status" class="ivy-st-search-status" aria-live="polite"></span>
+				<div class="ivy-st-dual-panel">
+					<input type="search" id="ivy-st-right-search" class="ivy-st-dual-search"
+					       placeholder="<?php esc_attr_e( '등록된 사용자 검색', 'ivy-support-ticket' ); ?>" />
+					<ul id="ivy-st-right-list" class="ivy-st-dual-list">
+						<?php if ( empty( $enrolled_users ) ) : ?>
+							<li class="ivy-st-dual-empty"><?php esc_html_e( '등록된 사용자가 없습니다.', 'ivy-support-ticket' ); ?></li>
+						<?php else : ?>
+							<?php foreach ( $enrolled_users as $u ) : ?>
+								<li class="ivy-st-dual-item"
+								    data-user-id="<?php echo (int) $u['id']; ?>"
+								    data-label="<?php echo esc_attr( $u['display_name'] . ' ' . $u['email'] ); ?>">
+									<?php echo esc_html( $u['display_name'] ); ?>
+									<span class="ivy-st-dual-email">(<?php echo esc_html( $u['email'] ); ?>)</span>
+								</li>
+							<?php endforeach; ?>
+						<?php endif; ?>
+					</ul>
+				</div>
 			</div>
 
-			<ul id="ivy-st-search-results" class="ivy-st-mapping-list ivy-st-search-results"></ul>
+			<p class="ivy-st-dual-page-info">
+				<button type="button" id="ivy-st-left-prev" class="button button-small" disabled>&#8249; <?php esc_html_e( '이전', 'ivy-support-ticket' ); ?></button>
+				<span id="ivy-st-page-info-text">Page 1 of 1</span>
+				<button type="button" id="ivy-st-left-next" class="button button-small" disabled><?php esc_html_e( '다음', 'ivy-support-ticket' ); ?> &#8250;</button>
+			</p>
 
 		<?php elseif ( $active_tab === 'info' ) : ?>
 			<table class="form-table" role="presentation">
