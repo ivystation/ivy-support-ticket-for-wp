@@ -27,11 +27,13 @@ class ApiClient {
 
 	/**
 	 * 키 검증 + 조직 정보. 설정 페이지의 "연결 테스트" 버튼이 호출한다.
+	 * siteUrl 파라미터를 함께 보내 pm에서 사이트 목록을 조회·관리할 수 있도록 한다.
 	 *
 	 * @return array|\WP_Error
 	 */
 	public function health() {
-		return $this->request( 'GET', '/api/external/wp/health' );
+		$site_url = rawurlencode( home_url() );
+		return $this->request( 'GET', '/api/external/wp/health?siteUrl=' . $site_url );
 	}
 
 	/**
