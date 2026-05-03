@@ -12,15 +12,16 @@ License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
 == Description ==
 
-이 플러그인은 ticket.ivynet.co.kr 고객 포털의 핵심 기능(티켓 발행·열람·댓글·첨부)을 워드프레스 어드민 화면 내부에서 사용할 수 있도록 합니다. 모든 데이터는 pm.ivynet.co.kr REST API를 통해 관리되며, 워드프레스 사이트에 별도의 DB 테이블을 만들지 않습니다.
+이 플러그인은 ticket.ivynet.co.kr 고객 포털을 워드프레스 어드민에서 바로 사용할 수 있도록 합니다. SSO(Single Sign-On) 설정 시 메뉴 클릭 한 번으로 ticket.ivynet.co.kr에 자동 로그인됩니다. 모든 티켓 데이터는 pm.ivynet.co.kr REST API를 통해 관리되며, 워드프레스 사이트에 별도의 DB 테이블을 만들지 않습니다.
 
 핵심 기능:
 
 * 워드프레스 사이드바 + 상단 Adminbar에 "Support Ticket" 메뉴
-* 서브메뉴: 새 티켓 작성 / 티켓 목록 / 설정
+* SSO 활성화 시: 메뉴 클릭 → ticket.ivynet.co.kr 새 탭 자동 로그인
+* SSO 비활성화 시: WP 어드민 내장 UI로 티켓 직접 관리 (하위 호환)
+* 설정 화면 4탭: API 연결 / SSO / 사용자 매핑 / 정보
 * 한 사이트 = pm 시스템의 한 조직(Organization)으로 자동 매핑
-* 활성화 시 administrator·editor 역할의 사용자가 자동으로 허용 사용자에 등록 (관리자가 추가/제거 가능)
-* GitHub Releases 기반 원클릭 자동 업데이트 (Phase 5에서 활성화)
+* GitHub Releases 기반 원클릭 자동 업데이트
 
 == Installation ==
 
@@ -30,6 +31,14 @@ License URI: https://www.gnu.org/licenses/gpl-2.0.html
 4. 사용자 매핑 탭에서 티켓을 발행할 사용자 확인 (administrator/editor는 자동 등록됨)
 
 == Changelog ==
+
+= 0.2.0 (dev) =
+* feat(sso): ticket.ivynet.co.kr SSO 자동 로그인 기능 추가. 메뉴 클릭 시 HS256 JWT를 생성하여 ticket.ivynet.co.kr을 새 탭으로 열고 pm.ivynet.co.kr에서 세션을 발급받아 자동 로그인한다.
+* feat(설정): SSO 탭 신설 — 티켓 포털 URL + SSO 시크릿 키 + 활성화 상태 표시.
+* SSO 미설정 시 기존 내장 UI(티켓 목록·작성·상세) 그대로 동작 (하위 호환).
+
+= 0.1.5 =
+* feat(api): health() 요청에 siteUrl 파라미터 추가.
 
 = 0.1.4 =
 * breaking: 자동 등록(activate 시 administrator/editor 시드)·"기본값으로 재설정" 버튼·"신규 administrator/editor 자동 등록" 토글 모두 제거. 사용자는 설정 → 사용자 매핑 탭에서 검색·추가로만 등록한다.
