@@ -23,6 +23,8 @@ class AdminPages {
 		add_action( 'admin_bar_menu', array( __CLASS__, 'register_admin_bar' ), 80 );
 		add_action( 'admin_post_ivy_st_save_settings', array( __CLASS__, 'handle_save_settings' ) );
 		add_action( 'wp_ajax_ivy_st_test_connection', array( __CLASS__, 'ajax_test_connection' ) );
+		add_action( 'wp_ajax_ivy_st_create_ticket', array( __CLASS__, 'ajax_create_ticket' ) );
+		add_action( 'wp_ajax_ivy_st_add_comment', array( __CLASS__, 'ajax_add_comment' ) );
 		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue_assets' ) );
 	}
 
@@ -130,36 +132,71 @@ class AdminPages {
 	}
 
 	public static function enqueue_assets( string $hook ): void {
-		if ( strpos( (string) $hook, 'ivy-st-' ) === false && strpos( (string) $hook, self::MENU_SLUG ) === false ) {
-			// 본 플러그인 페이지가 아니면 자산을 부르지 않는다.
+		$page = isset( $_GET['page'] ) ? sanitize_key( wp_unslash( $_GET['page'] ) ) : '';
+		// 본 플러그인 페이지가 아니면 자산을 부르지 않는다 — page 쿼리 파라미터로 식별.
+		$is_plugin_page = in_array(
+			$page,
+			array( self::SLUG_LIST, self::SLUG_NEW, self::SLUG_SHOW, self::SLUG_SETTING ),
+			true
+		);
+		if ( ! $is_plugin_page ) {
 			return;
 		}
+
 		wp_enqueue_style(
 			'ivy-st-admin',
 			IVY_ST_PLUGIN_URL . 'assets/css/admin.css',
 			array(),
 			IVY_ST_VERSION
 		);
-		wp_enqueue_script(
-			'ivy-st-settings',
-			IVY_ST_PLUGIN_URL . 'assets/js/settings.js',
-			array( 'jquery' ),
-			IVY_ST_VERSION,
-			true
+
+		$shared = array(
+			'ajaxUrl' => admin_url( 'admin-ajax.php' ),
+			'nonce'   => wp_create_nonce( self::NONCE_AJAX ),
+			'i18n'    => array(
+				'testing'        => __( '연결 확인 중...', 'ivy-support-ticket' ),
+				'success'        => __( '연결 성공', 'ivy-support-ticket' ),
+				'failed'         => __( '연결 실패', 'ivy-support-ticket' ),
+				'submitting'     => __( '제출 중...', 'ivy-support-ticket' ),
+				'created'        => __( '티켓이 발행되었습니다.', 'ivy-support-ticket' ),
+				'commenting'     => __( '댓글 등록 중...', 'ivy-support-ticket' ),
+				'commentDone'    => __( '댓글이 등록되었습니다.', 'ivy-support-ticket' ),
+				'genericError'   => __( '요청에 실패했습니다.', 'ivy-support-ticket' ),
+			),
 		);
-		wp_localize_script(
-			'ivy-st-settings',
-			'IVY_ST',
-			array(
-				'ajaxUrl' => admin_url( 'admin-ajax.php' ),
-				'nonce'   => wp_create_nonce( self::NONCE_AJAX ),
-				'i18n'    => array(
-					'testing' => __( '연결 확인 중...', 'ivy-support-ticket' ),
-					'success' => __( '연결 성공', 'ivy-support-ticket' ),
-					'failed'  => __( '연결 실패', 'ivy-support-ticket' ),
-				),
-			)
-		);
+
+		if ( $page === self::SLUG_SETTING ) {
+			wp_enqueue_script(
+				'ivy-st-settings',
+				IVY_ST_PLUGIN_URL . 'assets/js/settings.js',
+				array( 'jquery' ),
+				IVY_ST_VERSION,
+				true
+			);
+			wp_localize_script( 'ivy-st-settings', 'IVY_ST', $shared );
+		}
+
+		if ( $page === self::SLUG_NEW ) {
+			wp_enqueue_script(
+				'ivy-st-ticket-new',
+				IVY_ST_PLUGIN_URL . 'assets/js/ticket-new.js',
+				array( 'jquery' ),
+				IVY_ST_VERSION,
+				true
+			);
+			wp_localize_script( 'ivy-st-ticket-new', 'IVY_ST', $shared );
+		}
+
+		if ( $page === self::SLUG_SHOW ) {
+			wp_enqueue_script(
+				'ivy-st-ticket-show',
+				IVY_ST_PLUGIN_URL . 'assets/js/ticket-show.js',
+				array( 'jquery' ),
+				IVY_ST_VERSION,
+				true
+			);
+			wp_localize_script( 'ivy-st-ticket-show', 'IVY_ST', $shared );
+		}
 	}
 
 	public static function render_list(): void {
@@ -245,6 +282,132 @@ class AdminPages {
 				)
 			);
 		}
+		wp_send_json_success( $result );
+	}
+
+	/** 새 티켓 생성 AJAX 핸들러. */
+	public static function ajax_create_ticket(): void {
+		check_ajax_referer( self::NONCE_AJAX );
+		if ( ! self::current_user_can_use() ) {
+			wp_send_json_error( array( 'message' => __( '권한이 없습니다.', 'ivy-support-ticket' ) ), 403 );
+		}
+
+		$user = wp_get_current_user();
+		$api  = new ApiClient();
+
+		// 매핑은 ApiClient 호출 전에 한 번 더 보장.
+		$mapping = UserMapping::ensure_for_current_user( $api );
+		if ( is_wp_error( $mapping ) ) {
+			wp_send_json_error( array( 'message' => $mapping->get_error_message() ) );
+		}
+
+		$title       = isset( $_POST['title'] ) ? sanitize_text_field( wp_unslash( $_POST['title'] ) ) : '';
+		$category    = isset( $_POST['category'] ) ? sanitize_text_field( wp_unslash( $_POST['category'] ) ) : '';
+		$priority    = isset( $_POST['priority'] ) ? sanitize_text_field( wp_unslash( $_POST['priority'] ) ) : 'NORMAL';
+		$description = isset( $_POST['description'] ) ? wp_kses_post( wp_unslash( $_POST['description'] ) ) : '';
+		$budget      = isset( $_POST['budget'] ) ? sanitize_text_field( wp_unslash( $_POST['budget'] ) ) : '';
+		$deadline    = isset( $_POST['deadline'] ) ? sanitize_text_field( wp_unslash( $_POST['deadline'] ) ) : '';
+		$refs_raw    = isset( $_POST['referenceUrls'] ) ? wp_unslash( $_POST['referenceUrls'] ) : '';
+
+		if ( $title === '' || mb_strlen( $title ) < 2 || mb_strlen( $title ) > 200 ) {
+			wp_send_json_error( array( 'message' => __( '제목은 2~200자여야 합니다.', 'ivy-support-ticket' ) ) );
+		}
+		if ( trim( wp_strip_all_tags( $description ) ) === '' ) {
+			wp_send_json_error( array( 'message' => __( '내용을 입력하세요.', 'ivy-support-ticket' ) ) );
+		}
+
+		$ref_urls = array();
+		if ( is_string( $refs_raw ) && $refs_raw !== '' ) {
+			foreach ( preg_split( '/\r?\n/', $refs_raw ) as $line ) {
+				$u = trim( (string) $line );
+				if ( $u === '' ) {
+					continue;
+				}
+				$valid = filter_var( $u, FILTER_VALIDATE_URL );
+				if ( $valid ) {
+					$ref_urls[] = $valid;
+				}
+			}
+		}
+
+		$metadata = array();
+		if ( $budget !== '' ) {
+			$metadata['budget'] = $budget;
+		}
+		if ( $deadline !== '' ) {
+			$metadata['deadline'] = $deadline;
+		}
+		if ( ! empty( $ref_urls ) ) {
+			$metadata['referenceUrls'] = $ref_urls;
+		}
+
+		$payload = array(
+			'userEmail'   => $user->user_email,
+			'title'       => $title,
+			'description' => $description,
+			'category'    => $category,
+			'priority'    => $priority,
+		);
+		if ( ! empty( $metadata ) ) {
+			$payload['metadata'] = $metadata;
+		}
+
+		$result = $api->create_ticket( $payload );
+		if ( is_wp_error( $result ) ) {
+			wp_send_json_error( array( 'message' => $result->get_error_message() ) );
+		}
+
+		$show_url = add_query_arg(
+			array(
+				'page' => self::SLUG_SHOW,
+				'id'   => isset( $result['id'] ) ? $result['id'] : '',
+			),
+			admin_url( 'admin.php' )
+		);
+		wp_send_json_success(
+			array(
+				'ticket'  => $result,
+				'showUrl' => $show_url,
+			)
+		);
+	}
+
+	/** 댓글 작성 AJAX 핸들러. */
+	public static function ajax_add_comment(): void {
+		check_ajax_referer( self::NONCE_AJAX );
+		if ( ! self::current_user_can_use() ) {
+			wp_send_json_error( array( 'message' => __( '권한이 없습니다.', 'ivy-support-ticket' ) ), 403 );
+		}
+
+		$user = wp_get_current_user();
+		$api  = new ApiClient();
+
+		$mapping = UserMapping::ensure_for_current_user( $api );
+		if ( is_wp_error( $mapping ) ) {
+			wp_send_json_error( array( 'message' => $mapping->get_error_message() ) );
+		}
+
+		$ticket_id = isset( $_POST['ticketId'] ) ? sanitize_text_field( wp_unslash( $_POST['ticketId'] ) ) : '';
+		$body      = isset( $_POST['body'] ) ? wp_kses_post( wp_unslash( $_POST['body'] ) ) : '';
+
+		if ( $ticket_id === '' ) {
+			wp_send_json_error( array( 'message' => __( '티켓 ID가 누락되었습니다.', 'ivy-support-ticket' ) ) );
+		}
+		if ( trim( wp_strip_all_tags( $body ) ) === '' ) {
+			wp_send_json_error( array( 'message' => __( '댓글 내용을 입력하세요.', 'ivy-support-ticket' ) ) );
+		}
+
+		$result = $api->add_comment(
+			$ticket_id,
+			array(
+				'userEmail' => $user->user_email,
+				'body'      => $body,
+			)
+		);
+		if ( is_wp_error( $result ) ) {
+			wp_send_json_error( array( 'message' => $result->get_error_message() ) );
+		}
+
 		wp_send_json_success( $result );
 	}
 }
