@@ -175,8 +175,7 @@ foreach ( $enrolled_ids as $uid ) {
 								<li class="ivy-st-dual-item"
 								    data-user-id="<?php echo (int) $u['id']; ?>"
 								    data-label="<?php echo esc_attr( $u['display_name'] . ' ' . $u['email'] ); ?>">
-									<?php echo esc_html( $u['display_name'] ); ?>
-									<span class="ivy-st-dual-email">(<?php echo esc_html( $u['email'] ); ?>)</span>
+									<span class="ivy-st-dual-name"><?php echo esc_html( $u['display_name'] ); ?></span><span class="ivy-st-dual-email">(<?php echo esc_html( $u['email'] ); ?>)</span><?php if ( ! empty( $u['roles'] ) ) : ?><span class="ivy-st-dual-role"> - <?php echo esc_html( implode( ', ', $u['roles'] ) ); ?></span><?php endif; ?>
 								</li>
 							<?php endforeach; ?>
 						<?php endif; ?>

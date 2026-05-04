@@ -239,11 +239,15 @@
 		}
 
 		function buildItem(u) {
-			return $('<li class="ivy-st-dual-item"></li>')
+			var $li = $('<li class="ivy-st-dual-item"></li>')
 				.attr('data-user-id', String(u.id))
 				.attr('data-label', (u.display_name || '') + ' ' + (u.email || ''))
-				.append($('<span>').text((u.display_name || '') + ' '))
+				.append($('<span class="ivy-st-dual-name">').text(u.display_name || ''))
 				.append($('<span class="ivy-st-dual-email">').text('(' + (u.email || '') + ')'));
+			if (u.roles && u.roles.length) {
+				$li.append($('<span class="ivy-st-dual-role">').text(' - ' + u.roles.join(', ')));
+			}
+			return $li;
 		}
 
 		function updatePagination() {

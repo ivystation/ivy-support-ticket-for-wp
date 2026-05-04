@@ -662,7 +662,7 @@ class AdminPages {
 		$enrolled_ids = array_map( 'absint', (array) $settings['allowed_user_ids'] );
 
 		$args = array(
-			'fields'  => array( 'ID', 'user_email', 'user_login', 'display_name' ),
+			'role'    => 'administrator',
 			'orderby' => 'display_name',
 			'order'   => 'ASC',
 			'number'  => $per_page,
@@ -681,11 +681,13 @@ class AdminPages {
 		$total_pages = max( 1, (int) ceil( $total / $per_page ) );
 		$results     = array();
 
-		foreach ( (array) $query->get_results() as $u ) {
+		foreach ( (array) $query->get_results() as $wp_user ) {
+			$roles = ( $wp_user instanceof \WP_User ) ? (array) $wp_user->roles : array();
 			$results[] = array(
-				'id'           => (int) $u->ID,
-				'display_name' => (string) $u->display_name,
-				'email'        => (string) $u->user_email,
+				'id'           => (int) $wp_user->ID,
+				'display_name' => (string) $wp_user->display_name,
+				'email'        => (string) $wp_user->user_email,
+				'roles'        => $roles,
 			);
 		}
 

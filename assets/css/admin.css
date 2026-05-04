@@ -350,10 +350,23 @@
 	color: rgba(255, 255, 255, 0.75);
 }
 
+.ivy-st-dual-name {
+	font-weight: 600;
+	margin-right: 1px;
+}
+
 .ivy-st-dual-email {
 	color: #50575e;
 	font-size: 12px;
 	font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.ivy-st-dual-role {
+	font-size: 11px;
+	color: #6b7280;
+}
+.ivy-st-dual-item.is-selected .ivy-st-dual-role {
+	color: rgba(255, 255, 255, 0.65);
 }
 
 .ivy-st-dual-empty {
