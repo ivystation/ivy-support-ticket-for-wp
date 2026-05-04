@@ -662,7 +662,7 @@ class AdminPages {
 		$enrolled_ids = array_map( 'absint', (array) $settings['allowed_user_ids'] );
 
 		$args = array(
-			'role'    => 'administrator',
+			'role__in' => array( 'administrator', 'editor', 'operations_manager' ),
 			'orderby' => 'display_name',
 			'order'   => 'ASC',
 			'number'  => $per_page,
